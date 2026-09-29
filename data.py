@@ -19,6 +19,7 @@ class Mission():
     F_takeoff: float = 0.970
     F_ascent: float = 0.985
     F_descent: float = 0.990
+    descent: bool = True          # False: Raymer 6th, descent included in cruise
     F_landing: float = 0.995
     F_reserve: float = 1.06       # 6 % trapped and reserve fuel
 
@@ -29,6 +30,7 @@ class  Aerodynamics():
     AR: float = 9.5
     swet_sref:float = 6.0
     k_ld: float = 15.5
+    ld_max: float = None           # fixed (L/D)max; None -> K_LD * sqrt(AR / Swet/Sref)
     taper_ratio: float = 0.24
     sweep_c4: float = np.radians(25)
     c_cruise: float = 0.5 / HOUR   # 1/s (TSFC 0.5 1/h)
@@ -39,6 +41,7 @@ class  Aerodynamics():
 class Design:
     """Project decisions (initial sizing)."""
     wing_loading: float = 600.0        # kg/m2
+    cruise_wing_loading: float = None  # kg/m2, W/S for the cruise polar; None -> wing_loading
     thrust_to_weight: float = 0.30
     n_engines: int = 2
     max_mach: float = 0.82

@@ -2,7 +2,7 @@ import argparse
 
 import weight, constraints
 from geometry import wing, fuselage, tail
-from cases import a_300b4, a_310_300, a_350_900, a_380, b_707_320b, b_727_200, b_737_800, b_747_400
+from cases import a_300b4, a_310_300, a_350_900, a_380, b_707_320b, b_727_200, b_737_800, b_747_400, a_310_200, a_380_v2, a_320_200
 from constants import G
 from geometry.tail import implied_coefficients
 
@@ -11,12 +11,17 @@ CASES = {
     "737-800": b_737_800.case, "747-400": b_747_400.case,
     "a300b4": a_300b4.case, "a310-300": a_310_300.case,
     "a350-900": a_350_900.case, "a380": a_380.case,
+    "a310-200": a_310_200.case, "a380-v2": a_380_v2.case,
+    "a320-200": a_320_200.case,
 }
 
-def run(case_name: str, refined: bool = True, edition: int = None) -> dict:
+def run(case_name: str, refined: bool = True, edition: int = None,
+        descent: bool = None) -> dict:
     mission, aero, design, reference = CASES[case_name]()
     if edition:
         design.raymer_edition = edition
+    if descent is not None:
+        mission.descent = descent
 
     result = weight.resolve(mission, aero, design, refined=refined)
     limits = {
@@ -103,5 +108,8 @@ if __name__ == "__main__":
     parser.add_argument("--first-order", action="store_true")
     parser.add_argument("--edition", type=int, choices=(6, 7),
                         help="Raymer edition for the statistical tables (default: case value)")
+    parser.add_argument("--descent", action=argparse.BooleanOptionalAction,
+                        help="include the descent segment (default: case value)")
     args = parser.parse_args()
-    report(run(args.case, refined=not args.first_order, edition=args.edition))
+    report(run(args.case, refined=not args.first_order, edition=args.edition,
+               descent=args.descent))

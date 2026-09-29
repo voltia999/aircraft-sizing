@@ -8,12 +8,13 @@ from geometry.fuselage import Deck, SeatingZone
 
 def case() -> tuple:
     mission = Mission(
-        n_pax=484,
-        n_trip=18,                     # 4 pilots + 20 cabin crew
+        n_pax=555,
+        n_trip=20,                     # 4 pilots + 20 cabin crew
+        m_trip=100,
         range= 15200e3,                #8000 * NM,
         mach=0.85,
-        altitude=10_668,               # FL350
-        loiter=20 * 60,
+        altitude=12_497,               # FL350
+        loiter=30 * 60,
         v_aprox=140 * KT,
     )
 
@@ -22,7 +23,8 @@ def case() -> tuple:
         swet_sref=6,                # component estimate
         taper_ratio=0.22,
         sweep_c4=radians(33.5),
-        c_loiter=0.4 / HOUR,          # Raymer Table 3.3, high-bypass turbofan
+        c_loiter=0.4 / HOUR,
+        
     )
 
     design = Design(
@@ -38,12 +40,13 @@ def case() -> tuple:
 
     reference = Reference(
         name="A380-800",
-        mtow=560_000, oew=277_000,
+        mtow=575_000, oew=277_000,      
         wing_area=845.0, wingspan=79.75,
         fuselage_length=72.72,
         mlw=386_000,
-        fuel_capacity=320_000 * 0.80,   # 320 000 L at 0.80 kg/L
-        thrust=4 * 310e3,               # Trent 970, 70 000 lbf
+        max_payload=84_000,             
+        fuel_capacity=248_000,          
+        thrust=4 * 310e3,               
         aspect_ratio=7.53,
         fuselage_width=7.14, fuselage_height=8.41,
         cabin_length=49.9,              # main deck

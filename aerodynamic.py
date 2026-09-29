@@ -1,7 +1,8 @@
-from data import Mission, Aerodynamics
+from data import Mission, Aerodynamics, Design
 import numpy as np
 
 from ambiance import Atmosphere
+from constants import G
 
 
 def cruise_density(mission: Mission) -> float:
@@ -11,6 +12,8 @@ def velocity_rel(mission: Mission) -> float:
     return mission.mach * float(Atmosphere(mission.altitude).speed_of_sound[0])
 
 def ld_max(aero:Aerodynamics ) -> float:
+    if aero.ld_max is not None:
+        return aero.ld_max
     return aero.k_ld * np.sqrt(aero.AR / aero.swet_sref)
 
 def ld_cruise(aero:Aerodynamics) -> float:
@@ -30,3 +33,9 @@ def cd0(aero:Aerodynamics) -> float:
 
 def k(aero:Aerodynamics) -> float:
     return 1 / (np.pi * aero.AR * oswald(aero))
+
+def ld_cruise_refined(aero: Aerodynamics, mission: Mission, design: Design) -> float:
+    """L/D at the cruise CL from the parabolic polar CD = CD0 + K*CL^2."""
+    q = 0.5 * cruise_density(mission) * velocity_rel(mission) ** 2
+    ws = (design.cruise_wing_loading or design.wing_loading) * G   # kg/m2 -> N/m2
+    return 1 / (q * cd0(aero) / ws + ws * k(aero) / q)

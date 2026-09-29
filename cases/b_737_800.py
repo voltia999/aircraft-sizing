@@ -43,7 +43,6 @@ def case() -> tuple:
         max_span=36.0,                # ICAO code C box
         raymer_edition=6,             # guion v2, 8.6: Table 6.1 with a = 0.32, b = 0.66
         decks=_decks(),
-        # Guion v2, 9.1-9.2: D fixed for LD3-45 containers, nose and tailcone assumed
         fuselage={"diameter": 3.95, "nose": 4.0, "tailcone": 5.0},
         tail_arm_fraction=0.40,       # guion v2, 10.1: L_HT = L_VT ~ 0.40 Lf
     )

@@ -21,8 +21,13 @@ def cruise_wing_loading(mission: Mission, aero: Aerodynamics,
     q = 0.5 * cruise_density(mission) * velocity_rel(mission) ** 2
     return cl_opt * q / G / start_of_cruise
 
+# Raymer Table 5.3, jet transport, by edition: T/W = a * Mmax^C
+TABLE_5_3 = {6: {"a": 0.267, "C": 0.363},
+             7: {"a": 0.297, "C": 0.350}}
+
 def statistical_thrust_to_weight(design: Design) -> float:
-    return 0.267 * design.max_mach ** 0.363
+    t = TABLE_5_3[design.raymer_edition]
+    return t["a"] * design.max_mach ** t["C"]
 
 def is_feasible(wing_loading: float, mission: Mission, design: Design) -> bool:
     return wing_loading <= landing_wing_loading(mission, design)

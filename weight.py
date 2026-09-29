@@ -1,5 +1,5 @@
 from data import Mission, Aerodynamics, Design
-from aerodynamic import velocity_rel, ld_max, ld_cruise
+from aerodynamic import velocity_rel, ld_max, ld_cruise, ld_cruise_refined
 from results import Result
 import numpy as np
 
@@ -31,8 +31,10 @@ def w_crew(mission: Mission) -> float:
 def w_fixed(mission: Mission) -> float:
     return w_crew(mission) + w_payload(mission)
 
-def F_cruise(mission: Mission, aero: Aerodynamics) -> float:
-    return np.exp(- (mission.range * aero.c_cruise) / (velocity_rel(mission) * ld_cruise(aero)))
+def F_cruise(mission: Mission, aero: Aerodynamics, design: Design = None) -> float:
+    """Breguet; with a design, L/D from the polar at the cruise CL."""
+    ld = ld_cruise_refined(aero, mission, design) if design else ld_cruise(aero)
+    return np.exp(- (mission.range * aero.c_cruise) / (velocity_rel(mission) * ld))
 
 def F_loiter(mission: Mission, aero: Aerodynamics) -> float:
     return np.exp((-mission.loiter * aero.c_loiter) / ld_max(aero))
@@ -41,13 +43,15 @@ def F_ascent_refined(mission: Mission) -> float:
     """Raymer 6.3.6: climb and acceleration fraction as a function of Mach."""
     return 1.0065 - 0.0325 * mission.mach
 
-def F_fuel(mission: Mission, aero: Aerodynamics, refined: bool = False) -> float:
+def F_fuel(mission: Mission, aero: Aerodynamics, refined: bool = False,
+           design: Design = None) -> float:
     f_ascent = F_ascent_refined(mission) if refined else mission.F_ascent
+    f_descent = mission.F_descent if mission.descent else 1.0
     w_x = (mission.F_takeoff
             * f_ascent
-            * F_cruise(mission, aero)
+            * F_cruise(mission, aero, design if refined else None)
             * F_loiter(mission, aero)
-            * mission.F_descent
+            * f_descent
             * mission.F_landing)
     return mission.F_reserve * (1 - w_x)
 
@@ -72,8 +76,8 @@ def resolve(mission: Mission, aero: Aerodynamics, design: Design = None,
             tol: float = 1e-2, max_iter: int = 1000) -> Result:
     """Iterate W0 = (Wcrew + Wpayload) / (1 - Wf/W0 - We/W0).
 
-    refined=True uses the Mach-dependent climb fraction and Table 6.1
-    (requires design); otherwise the first-order Table 3.1 fraction.
+    refined=True uses the Mach-dependent climb fraction, the polar cruise L/D
+    and Table 6.1 (requires design); otherwise the first-order Table 3.1 fraction.
     """
     if refined and design is None:
         raise ValueError("El calculo refinado necesita un Design")
@@ -84,7 +88,7 @@ def resolve(mission: Mission, aero: Aerodynamics, design: Design = None,
         return F_empty_refined(w, aero, design) if refined else F_empty(w, k_vs, edition)
 
     w0, hist = w0_initial, []
-    wf_w0 = F_fuel(mission, aero, refined)
+    wf_w0 = F_fuel(mission, aero, refined, design)
     for _ in range(max_iter):
         we_w0 = empty_fraction(w0)
         denominator  = 1 - wf_w0 - we_w0

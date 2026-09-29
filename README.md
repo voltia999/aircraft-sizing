@@ -39,10 +39,11 @@ python main.py                    # caso por defecto: a380, cálculo refinado
 python main.py 737-800            # otro caso
 python main.py 737-800 --first-order   # método de primer orden (Tabla 3.1)
 python main.py a350-900 --edition 6    # fuerza la edición de Raymer (6 o 7)
+python main.py a380-v2 --no-descent    # sin segmento de descenso (--descent lo fuerza)
 ```
 
 Casos disponibles: `707-320b`, `727-200`, `737-800`, `747-400`, `a300b4`,
-`a310-300`, `a350-900`, `a380`.
+`a310-200`, `a310-300`, `a350-900`, `a380`, `a380-v2`.
 
 Salida (extracto de `python main.py 737-800`):
 
@@ -70,7 +71,7 @@ Uso desde Python:
 ```python
 from main import run, report
 
-out = run("737-800", refined=True)   # dict con weights, limits, wing, fuselage, tail...
+out = run("737-800", refined=True, descent=False)   # dict con weights, limits, wing, fuselage, tail...
 print(out["weights"].w0)             # MTOW [kg]
 report(out)
 ```
@@ -111,6 +112,9 @@ case() ─► Mission, Aerodynamics, Design, Reference
 El empenaje se calcula el último porque necesita el ala (MAC, S, b) y la
 longitud del fuselaje (que fija el brazo de cola).
 
+Detalle de las funciones geométricas, constantes y claves de retorno en
+[`geometry/README.md`](geometry/README.md).
+
 ---
 
 ## Datos de entrada (`data.py`)
@@ -127,7 +131,8 @@ longitud del fuselaje (que fija el brazo de cola).
 | `altitude` | 11 000 | m | Altitud de crucero |
 | `loiter` | 20 min | s | Tiempo de espera |
 | `v_aprox` | 135 kt | m/s | Velocidad de aproximación |
-| `F_takeoff`, `F_ascent`, `F_descent`, `F_landing` | 0.970, 0.985, 0.990, 0.995 | | Fracciones de segmento (Raymer Tabla 3.2) |
+| `F_takeoff`, `F_ascent`, `F_descent`, `F_landing` | 0.970, 0.985, 0.990, 0.995 | | Fracciones de segmento (Raymer Tabla 3.2; el descenso no está en la 6.ª ed.) |
+| `descent` | `True` | | Incluye `F_descent`; `False` = Raymer 6.ª ed. (descenso dentro del crucero) |
 | `F_reserve` | 1.06 | | Factor de combustible atrapado y de reserva (6 %) |
 
 ### `Aerodynamics` — hipótesis aerodinámicas
@@ -137,6 +142,7 @@ longitud del fuselaje (que fija el brazo de cola).
 | `AR` | 9.5 | Alargamiento |
 | `swet_sref` | 6.0 | Relación superficie mojada / de referencia |
 | `k_ld` | 15.5 | Constante de (L/D)max = K_LD·√(AR / (Swet/Sref)) |
+| `ld_max` | `None` | (L/D)max fijado a mano; con `None` se calcula con `k_ld` |
 | `taper_ratio` | 0.24 | Estrechamiento λ |
 | `sweep_c4` | 25° | Flecha en c/4 (**en radianes**) |
 | `c_cruise`, `c_loiter` | 0.5 h⁻¹ | Consumo específico (en s⁻¹: `0.5 / HOUR`) |
@@ -147,6 +153,7 @@ longitud del fuselaje (que fija el brazo de cola).
 | Campo | Defecto | Descripción |
 |---|---|---|
 | `wing_loading` | 600 kg/m² | Carga alar W0/S elegida |
+| `cruise_wing_loading` | `None` | W/S para la polar de crucero (`ld_cruise_refined`); con `None` usa `wing_loading` |
 | `thrust_to_weight` | 0.30 | T/W |
 | `n_engines` | 2 | Número de motores |
 | `max_mach` | 0.82 | Mach máximo |
@@ -176,8 +183,9 @@ de los demás campos.
 | Función | Fórmula |
 |---|---|
 | `cruise_density`, `velocity_rel` | ISA (`ambiance`) a `altitude`; V = M·a |
-| `ld_max` | K_LD · √(AR / (Swet/Sref)) |
+| `ld_max` | `aero.ld_max` si está fijado; si no, K_LD · √(AR / (Swet/Sref)) |
 | `ld_cruise` | 0.866 · (L/D)max (jet) |
+| `ld_cruise_refined` | 1 / (q·CD0/(W/S) + (W/S)·K/q), con q = ½ρV² y W/S = `cruise_wing_loading`·g (si es `None`, `wing_loading`) |
 | `sweep_le` | atan(tan Λc/4 + (1−λ) / (AR(1+λ))) |
 | `oswald` | e₀ = 1 − 0.045·AR^0.68; si Λ_LE > 30°: 4.61·e₀·cos(Λ_LE)^0.15 − 3.1, si no: 1.78·e₀ − 0.64 |
 | `cd0` | Cfe · Swet/Sref |
@@ -186,10 +194,12 @@ de los demás campos.
 ### Pesos (`weight.py`)
 
 - **Peso fijo**: `w_fixed = n_pax·m_pax + n_trip·m_trip`.
-- **Crucero** (Breguet): `F_cruise = exp(−R·c / (V·(L/D)crucero))`.
+- **Crucero** (Breguet): `F_cruise = exp(−R·c / (V·(L/D)crucero))`; con `design`
+  (cálculo refinado) usa `ld_cruise_refined`, si no `ld_cruise`.
 - **Espera** (Breguet): `F_loiter = exp(−E·c / (L/D)max)`.
 - **Subida refinada** (Raymer 6.3.6): `F_ascent_refined = 1.0065 − 0.0325·M`.
-- **Combustible**: `Wf/W0 = F_reserve · (1 − ∏ fracciones)`.
+- **Combustible**: `Wf/W0 = F_reserve · (1 − ∏ fracciones)`; `F_descent` solo
+  entra si `mission.descent` es `True`.
 - **Fracción en vacío**:
   - Primer orden, `F_empty` (Tabla 3.1): `We/W0 = a·W0^C·Kvs`.
   - Refinado, `F_empty_refined` (Tabla 6.1):
@@ -207,7 +217,8 @@ W0 = (Wcrew + Wpayload) / (1 − Wf/W0 − We/W0)
 hasta que |ΔW0| < `tol` (kg). Devuelve un `Result` con `w0`, `wf_w0`, `we_w0`,
 el historial de iteraciones y las propiedades `w_empty` y `w_fuel`.
 
-- `refined=True` usa la subida dependiente de Mach y la Tabla 6.1, y exige un `Design`.
+- `refined=True` usa la subida dependiente de Mach, la L/D de crucero de la polar
+  (`ld_cruise_refined`) y la Tabla 6.1, y exige un `Design`.
 - Lanza `ValueError` si `Wf/W0 + We/W0 ≥ 1` (misión no cerrable) y
   `RuntimeError` si no converge.
 
@@ -217,7 +228,8 @@ el historial de iteraciones y las propiedades `w_empty` y `w_fuel`.
   W/S_aterrizaje = ½·ρ₀·Vstall²·CLmax / g, referida a despegue dividiendo por `mlw_fraction`.
 - `cruise_wing_loading`: W/S para el CL óptimo de crucero,
   CL_opt = √(CD0 / 3K), referida a despegue dividiendo por las fracciones de despegue y subida.
-- `statistical_thrust_to_weight`: T/W = 0.267·Mmax^0.363 (Raymer Tabla 5.3).
+- `statistical_thrust_to_weight`: T/W = a·Mmax^C (Raymer Tabla 5.3, `TABLE_5_3`):
+  6.ª ed. a = 0.267, C = 0.363; 7.ª ed. a = 0.297, C = 0.350.
 - `is_feasible`: comprueba W/S ≤ límite de aterrizaje.
 
 ### Ala (`geometry/wing.py`)
@@ -280,6 +292,14 @@ plazas, Raymer 6.ª ed.). Comprueba cada ecuación del guion con tolerancia
 relativa del 1 % (el PDF redondea a unas tres cifras significativas).
 `tests/conftest.py` añade el directorio raíz al `sys.path`.
 
+`a380-v2` usa las entradas de `MTOW_A380_Raymer.pdf`. El PDF fija
+(L/D)max = 19.5, que no sale de su K_LD = 15.5 con AR = 7.5 (daría 17.3); con
+`ld_max=19.5` en el caso, esta orden reproduce su MTOW (≈ 539 700 kg):
+
+```bash
+python main.py a380-v2 --first-order --edition 6 --no-descent
+```
+
 Estado actual: **28 correctos, 2 fallos conocidos**:
 
 - `test_cabin_length`: el guion usa 3 lavabos para 150 plazas (uno cada 50); el
@@ -304,4 +324,5 @@ Estado actual: **28 correctos, 2 fallos conocidos**:
 - D. P. Raymer, *Aircraft Design: A Conceptual Approach*, 6.ª y 7.ª ed.
   (Tablas 3.1, 3.2, 3.3, 5.3, 6.1, 6.3, 6.4; Fig. 8.2).
 - CS-25 (EASA): factor Vref, 25.807 (salidas de emergencia).
-- Documentos del curso en `../`: guion V2/DEF y cambios de Raymer v7.
+- Documentos del curso en `../`: guion V2/DEF, cambios de Raymer v7 y
+  `MTOW_A380_Raymer.pdf` (referencia de `a380-v2`).
