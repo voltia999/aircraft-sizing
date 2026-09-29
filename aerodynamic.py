@@ -16,6 +16,10 @@ def ld_max(aero:Aerodynamics ) -> float:
         return aero.ld_max
     return aero.k_ld * np.sqrt(aero.AR / aero.swet_sref)
 
+def ld_max_polar(aero: Aerodynamics) -> float:
+    """(L/D)max of the parabolic polar, at CD0 = K*CL^2."""
+    return 1 / (2 * np.sqrt(cd0(aero) * k(aero)))
+
 def ld_cruise(aero:Aerodynamics) -> float:
     return 0.866 * ld_max(aero)
 
@@ -27,6 +31,13 @@ def oswald(aero:Aerodynamics) -> float:
     if np.rad2deg(sweep_le(aero)) > 30.0:
         return 4.61 * e * np.cos(sweep_le(aero)) ** 0.15 - 3.1
     return 1.78 * e - 0.64
+
+# Raymer 12.6.1: "typically between 0.7 and 0.85"
+OSWALD_TYPICAL_RANGE = (0.70, 0.85)
+
+def oswald_in_typical_range(aero: Aerodynamics) -> bool:
+    low, high = OSWALD_TYPICAL_RANGE
+    return low <= oswald(aero) <= high
 
 def cd0(aero:Aerodynamics) -> float:
     return aero.cfe * aero.swet_sref

@@ -1,5 +1,5 @@
 from data import Mission, Aerodynamics, Design
-from aerodynamic import velocity_rel, ld_max, ld_cruise, ld_cruise_refined
+from aerodynamic import velocity_rel, ld_max, ld_max_polar, ld_cruise, ld_cruise_refined
 from results import Result
 import numpy as np
 
@@ -66,8 +66,10 @@ def F_cruise(mission: Mission, aero: Aerodynamics, design: Design = None,
     ws = mid_cruise_wing_loading(mission, aero, design, start_of_cruise)
     return breguet_cruise(mission, aero, ld_cruise_refined(aero, mission, design, ws))
 
-def F_loiter(mission: Mission, aero: Aerodynamics) -> float:
-    return np.exp((-mission.loiter * aero.c_loiter) / ld_max(aero))
+def F_loiter(mission: Mission, aero: Aerodynamics, refined: bool = False) -> float:
+    """Raymer eq. 6.14, jet loiter at (L/D)max: eq. 3.12 (K_LD), or the polar if refined."""
+    ld = ld_max_polar(aero) if refined else ld_max(aero)
+    return np.exp((-mission.loiter * aero.c_loiter) / ld)
 
 def F_ascent_refined(mission: Mission) -> float:
     """Raymer 6.3.6: climb and acceleration fraction as a function of Mach."""
@@ -81,7 +83,7 @@ def F_fuel(mission: Mission, aero: Aerodynamics, refined: bool = False,
             * f_ascent
             * F_cruise(mission, aero, design if refined else None,
                        mission.F_takeoff * f_ascent)
-            * F_loiter(mission, aero)
+            * F_loiter(mission, aero, refined)
             * f_descent
             * mission.F_landing)
     return mission.F_reserve * (1 - w_x)

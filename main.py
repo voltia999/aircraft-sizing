@@ -1,6 +1,6 @@
 import argparse
 
-import weight, constraints
+import weight, constraints, aerodynamic
 from geometry import wing, fuselage, tail
 from cases import a_300b4, a_310_300, a_350_900, a_380, b_707_320b, b_727_200, b_737_800, b_747_400, a_310_200, a_380_v2, a_320_200
 from constants import G
@@ -28,14 +28,29 @@ def run(case_name: str, refined: bool = True, edition: int = None,
         "landing": constraints.landing_wing_loading(mission, design),
         "cruise": constraints.cruise_wing_loading(mission, aero),
     }
+    aero_summary = aerodynamics_summary(mission, aero, design, refined)
 
     w = wing.wing_geometry(result.w0, aero, design, max_span=design.max_span)
     f = fuselage.fuselage_geometry(design.decks, w0=result.w0,
                                   edition=design.raymer_edition, **design.fuselage)
     t = tail.tail_geometry(w, f["length"],
                            tail.TailCoefficients(arm_fraction=design.tail_arm_fraction))
-    return {"weights": result, "limits": limits, "design": design,
+    return {"weights": result, "limits": limits, "aero": aero_summary,
+            "design": design,
             "wing": w, "fuselage": f, "tail": t, "reference": reference}
+
+def aerodynamics_summary(mission, aero, design, refined: bool) -> dict:
+    """Polar and the cruise and loiter L/D used by the sizing."""
+    if refined:
+        start = mission.F_takeoff * weight.F_ascent_refined(mission)
+        ws = weight.mid_cruise_wing_loading(mission, aero, design, start)
+        ld_cruise = aerodynamic.ld_cruise_refined(aero, mission, design, ws)
+        ld_loiter = aerodynamic.ld_max_polar(aero)
+    else:
+        ld_cruise, ld_loiter = aerodynamic.ld_cruise(aero), aerodynamic.ld_max(aero)
+    return {"e": aerodynamic.oswald(aero), "e_ok": aerodynamic.oswald_in_typical_range(aero),
+            "cd0": aerodynamic.cd0(aero), "k": aerodynamic.k(aero),
+            "ld_cruise": ld_cruise, "ld_loiter": ld_loiter}
 
 def report(out: dict) -> None:
     """Prints the summary table of section 11."""
@@ -63,6 +78,17 @@ def report(out: dict) -> None:
     row("We/W0", r.we_w0, fmt=".3f")
     row("Wf/W0", r.wf_w0, fmt=".3f")
     row("Iterations", len(r.history), fmt="d")
+
+    a = out["aero"]
+    header("Aerodynamics")
+    row("Oswald e", a["e"], fmt=".3f")
+    if not a["e_ok"]:
+        low, high = aerodynamic.OSWALD_TYPICAL_RANGE
+        print(f"  ! e outside Raymer's typical {low}-{high} (sec. 12.6.1)")
+    row("CD0", a["cd0"], fmt=".4f")
+    row("K", a["k"], fmt=".4f")
+    row("L/D cruise", a["ld_cruise"], fmt=".2f")
+    row("L/D loiter", a["ld_loiter"], fmt=".2f")
 
     header("Wing and thrust loading")
     row("W0/S", r.w0 / w["S"], "kg/m2", ref.wing_loading)

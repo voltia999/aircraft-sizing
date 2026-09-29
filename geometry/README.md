@@ -205,9 +205,16 @@ conviene fijar `diameter`, `nose` y `tailcone`.
 | `C_VT_JET_TRANSPORT` | 0.09 | Raymer Tabla 6.4 |
 | `ARM_FRACTION_WING_ENGINES` | 0.50 | Brazo / Lf, motores en el ala (0.50–0.55) |
 | `ARM_FRACTION_AFT_ENGINES` | 0.45 | Brazo / Lf, motores traseros (0.45–0.50) |
-| `AILERON_FRACTION` | 0.05 | de S |
-| `ELEVATOR_FRACTION` | 0.30 | de S_HT |
-| `RUDDER_FRACTION` | 0.30 | de S_VT |
+| `AILERON_CHORD_RATIO` | 0.23 | c_a/c, Raymer fig. 6.3 con envergadura 0.4 |
+| `AILERON_SPAN` | (0.50, 0.90) | Tramo de semienvergadura de los alerones (Raymer 6.6) |
+| `ELEVATOR_CHORD_RATIO` | 0.25 | c_e/c, Raymer tabla 6.5 (transporte a reacción) |
+| `RUDDER_CHORD_RATIO` | 0.32 | c_r/c, Raymer tabla 6.5 |
+
+### `ControlSurfaceRatios`
+
+Dataclass con `aileron_chord`, `aileron_span`, `elevator_chord` y `rudder_chord`,
+con los valores de Raymer por defecto. Los mandos mantienen la cuerda relativa
+constante (Raymer 6.6), así que en los timones la fracción de área es la de cuerda.
 
 ### `TailCoefficients`
 
@@ -222,7 +229,8 @@ relajada: el A380 trabaja con c_HT ≈ 0.6–0.7.
 | `tail_arm(fuselage_length, coeffs)` | L = arm_fraction · Lf (de c/4 del ala a c/4 de la cola) |
 | `horizontal_tail_area(mac, wing_area, arm, c_ht)` | S_HT = c_HT · MAC · S / L |
 | `vertical_tail_area(span, wing_area, arm, c_vt)` | S_VT = c_VT · b · S / L |
-| `control_surfaces(wing_area, s_ht, s_vt)` | `{"ailerons", "elevator", "rudder"}` |
+| `span_area_fraction(taper, eta_in, eta_out)` | Fracción del área del ala trapezoidal entre dos estaciones de semienvergadura |
+| `control_surfaces(wing, s_ht, s_vt, ratios=None)` | Alerones = c_a/c · fracción(0.5–0.9) · S; timones = c/c · S_cola |
 | `implied_coefficients(s_ht, s_vt, mac, span, wing_area, arm)` | Método inverso: `{"c_ht", "c_vt"}` de un avión real |
 | `tail_geometry(wing, fuselage_length, coeffs=None)` | Ensamblado completo |
 
@@ -230,12 +238,12 @@ La cola vertical usa la **envergadura** como longitud de referencia, no la MAC,
 porque los momentos de guiñada que compensa (por ejemplo, con un motor parado)
 escalan con b.
 
-`tail_geometry` recibe el `dict` de `wing_geometry` (usa `S`, `b` y `MAC`) y
+`tail_geometry` recibe el `dict` de `wing_geometry` (usa `S`, `b`, `MAC`, `c_root` y `c_tip`) y
 devuelve `{"arm", "s_ht", "s_vt", "controls"}`.
 
 Ejemplo (guion V2: ala anterior, Lf = 37.5 m, brazo 0.40·Lf = 15 m):
-S_HT = 32.0 m², S_VT = 24.3 m²; alerones 6.0, timón de profundidad 9.6 y
-timón de dirección 7.3 m².
+S_HT = 32.0 m², S_VT = 24.3 m². El guion toma alerones del 5 % de S y timones del
+30 %: 6.0, 9.6 y 7.3 m². Con los valores de Raymer (λ = 0.24) salen 8.3, 8.0 y 7.8 m².
 
 ```python
 from geometry import tail

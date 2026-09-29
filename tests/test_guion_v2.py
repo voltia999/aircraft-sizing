@@ -262,8 +262,13 @@ def test_vertical_tail():
 
 
 def test_control_surfaces():
-    """Table 6: 6.0, 9.6 and 7.3 m2."""
-    c = tail.control_surfaces(120, 32.0, 24.3)
-    assert c["ailerons"] == pytest.approx(6.0, rel=REL)
+    """Table 6: 9.6 and 7.3 m2 with the guion's 30 % of each tail.
+
+    The guion's ailerons (5 % of S = 6.0 m2) are not a Raymer ratio; the code
+    sizes them from Fig. 6.3 (see tests/test_controls_loiter.py).
+    """
+    wing = {"S": 120, "c_root": 5.73, "c_tip": 1.38}
+    ratios = tail.ControlSurfaceRatios(elevator_chord=0.30, rudder_chord=0.30)
+    c = tail.control_surfaces(wing, 32.0, 24.3, ratios)
     assert c["elevator"] == pytest.approx(9.6, rel=REL)
     assert c["rudder"] == pytest.approx(7.3, rel=REL)

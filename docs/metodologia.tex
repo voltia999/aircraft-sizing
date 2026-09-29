@@ -175,6 +175,12 @@ donde la flecha del borde de ataque se obtiene de la de la línea del
 \begin{equation}
   \tan\Lambda_\text{LE} = \tan\Lambda_{c/4} + \frac{1-\lambda}{A\,(1+\lambda)} .
 \end{equation}
+Raymer indica que $e$ suele estar entre \num{0.70} y \num{0.85}
+\cite[sec.~12.6.1]{raymer6}; el código avisa cuando la correlación da un valor
+fuera de ese rango. Entre \SIlist{0;30}{\degree} de flecha el libro propone
+interpolar entre las dos ecuaciones; no se hace porque en alas como la del guion
+($\Lambda_\text{LE}\approx\SI{28}{\degree}$) daría $e\approx0{,}49$, fuera de ese
+mismo rango, y el guion usa la de ala recta~\cite{guion}.
 La carga alar de máximo alcance para un reactor corresponde a
 $C_{L,\text{opt}} = \sqrt{C_{D0}/(3K)}$ \cite[ec.~5.14]{raymer6}:
 \begin{equation}
@@ -265,8 +271,14 @@ a mitad de crucero, como admite Raymer para el análisis inicial
 que se itera porque la fracción de crucero depende de la $L/D$. El guion fija
 en su lugar \SI{550}{kg/m^2}~\cite{guion}; el código permite forzar ese valor.
 
-\paragraph{Espera, aterrizaje y reservas.} Sin cambios respecto al
-first-order sizing. Con las nuevas fracciones se recalcula $W_f/\WO$ y se
+\paragraph{Espera.} Misma ecuación de la autonomía \cite[ec.~6.14]{raymer6},
+volando a la $(L/D)$ máxima \cite[cap.~5]{raymer6}, que ahora se toma de la
+polar para ser coherente con el crucero:
+\begin{equation}
+  \left(\frac{L}{D}\right)_\text{máx} = \frac{1}{2\sqrt{C_{D0}\,K}} .
+\end{equation}
+
+\paragraph{Aterrizaje y reservas.} Sin cambios respecto al first-order sizing. Con las nuevas fracciones se recalcula $W_f/\WO$ y se
 vuelve a iterar la ecuación~\eqref{eq:w0} con la fracción en vacío de la
 tabla~6.1; con $\WO$ refinado se recalculan la superficie alar, la geometría
 del ala y el empuje.
@@ -316,12 +328,16 @@ con $c_\text{HT}=1{,}00$ y $c_\text{VT}=0{,}09$ para transporte a reacción
 fuselaje: \SIrange{50}{55}{\percent} con motores en el ala y
 \SIrange{45}{50}{\percent} con motores traseros \cite[cap.~6]{raymer6}.
 
-Las superficies de mando se estiman como fracciones de la superficie que las
-porta: alerones $\approx\SI{5}{\percent}$ de $S$, timón de profundidad
-$\approx\SI{30}{\percent}$ de $S_\text{HT}$ y timón de dirección
-$\approx\SI{30}{\percent}$ de $S_\text{VT}$. Si el mando ocupa toda la
-envergadura de la superficie, la fracción de área coincide con la de cuerda
-de la tabla~6.5~\cite{raymer6,guion}.
+Las superficies de mando mantienen una cuerda relativa constante
+\cite[sec.~6.6]{raymer6}. Los timones ocupan toda la envergadura de la cola, así
+que su fracción de área es la de cuerda de la tabla~6.5: \num{0.25} para el de
+profundidad y \num{0.32} para el de dirección en transporte a reacción. Los
+alerones van del \SIrange{50}{90}{\percent} de la semienvergadura, con
+$c_a/c \approx 0{,}23$ (figura~6.3); para el ala trapezoidal,
+\begin{equation}
+  S_a = \frac{c_a}{c}\,S\,
+  \frac{\left[\eta - (1-\lambda)\,\eta^2/2\right]_{0{,}5}^{0{,}9}}{1-(1-\lambda)/2} .
+\end{equation}
 
 %----------------------------------------------------------------------------
 \section{Procedimiento}

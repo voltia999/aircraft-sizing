@@ -184,10 +184,12 @@ de los demás campos.
 |---|---|
 | `cruise_density`, `velocity_rel` | ISA (`ambiance`) a `altitude`; V = M·a |
 | `ld_max` | `aero.ld_max` si está fijado; si no, K_LD · √(AR / (Swet/Sref)) |
+| `ld_max_polar` | (L/D)max de la polar, 1 / (2·√(CD0·K)); espera del refinado |
 | `ld_cruise` | 0.866 · (L/D)max (jet) |
 | `ld_cruise_refined` | 1 / (q·CD0/(W/S) + (W/S)·K/q), con q = ½ρV²; W/S en N/m² (el argumento `wing_loading`, o `cruise_wing_loading`, o `wing_loading` de diseño) |
 | `sweep_le` | atan(tan Λc/4 + (1−λ) / (AR(1+λ))) |
 | `oswald` | e₀ = 1 − 0.045·AR^0.68; si Λ_LE > 30°: 4.61·e₀·cos(Λ_LE)^0.15 − 3.1, si no: 1.78·e₀ − 0.64 |
+| `oswald_in_typical_range` | e dentro de 0.70–0.85 (Raymer 12.6.1); el informe avisa si no |
 | `cd0` | Cfe · Swet/Sref |
 | `k` | 1 / (π·AR·e) |
 
@@ -200,7 +202,8 @@ de los demás campos.
 - **W/S a mitad de crucero** (`mid_cruise_wing_loading`, Raymer nota a la ec. 6.13):
   `(W/S)_mid = (W0/S)·F_despegue·F_ascenso·(1 + F_crucero)/2`, iterada porque
   `F_crucero` depende de la L/D. Si `Design.cruise_wing_loading` está fijado, se usa ese valor.
-- **Espera** (Breguet): `F_loiter = exp(−E·c / (L/D)max)`.
+- **Espera** (Breguet, ec. 6.14): `F_loiter = exp(−E·c / (L/D)max)`, con la (L/D)max de
+  `ld_max` en primer orden y la de la polar (`ld_max_polar`) en el refinado.
 - **Subida refinada** (Raymer 6.3.6): `F_ascent_refined = 1.0065 − 0.0325·M`.
 - **Combustible**: `Wf/W0 = F_reserve · (1 − ∏ fracciones)`; `F_descent` solo
   entra si `mission.descent` es `True`.
