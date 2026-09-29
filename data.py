@@ -15,6 +15,10 @@ class Mission():
     altitude: float = 11000.0      # m
     loiter: float = 20 * 60       # s
     v_aprox: float = 135 * KT  # m/s
+    # Field requirements (None: constraint not applied)
+    takeoff_field_length: float = None   # m, FAR 25 takeoff field (balanced) length
+    landing_field_length: float = None   # m, FAR 25 landing field length
+    airport_altitude: float = 0.0        # m, ISA
     # Short segment fractions, Raymer Table 3.2
     F_takeoff: float = 0.970
     F_ascent: float = 0.985
@@ -46,6 +50,8 @@ class Design:
     n_engines: int = 2
     max_mach: float = 0.82
     cl_max_landing: float = 2.8
+    cl_max_takeoff: float = None       # None -> 0.8 * cl_max_landing (Raymer 5.3.2)
+    bypass_ratio: float = None         # needed for the takeoff field length (Raymer 17.114)
     mlw_fraction: float = 0.85         # MLW / MTOW
     vref_factor: float = 1.23          # CS-25
     k_vs: float = 1.0                  # 1.04 for variable sweep

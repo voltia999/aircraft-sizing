@@ -88,7 +88,7 @@ sizing/
 ├── results.py         Dataclass Result (salida de la iteración de pesos)
 ├── aerodynamic.py     Atmósfera, L/D, flecha, Oswald, polar (CD0, K)
 ├── weight.py          Fracciones de misión, fracción en vacío e iteración de W0
-├── constraints.py     Límites de carga alar y T/W estadístico
+├── constraints.py     Límites de carga alar, T/W de subida y estadístico
 ├── geometry/
 │   ├── wing.py        Geometría del ala trapezoidal
 │   ├── fuselage.py    Sección y longitud del fuselaje desde la cabina
@@ -103,7 +103,7 @@ Flujo de cálculo en `main.run()`:
 case() ─► Mission, Aerodynamics, Design, Reference
             │
             ├─► weight.resolve() ────────► W0, We/W0, Wf/W0
-            ├─► constraints.*   ─────────► W/S máx. (aterrizaje, crucero)
+            ├─► constraints.*   ─────────► W/S máx. (aproximación, pistas, crucero), T/W de subida
             ├─► wing.wing_geometry(W0) ──► S, b, cuerdas, MAC
             ├─► fuselage.fuselage_geometry(decks) ─► longitud, sección
             └─► tail.tail_geometry(ala, Lf) ─► S_HT, S_VT, mandos
@@ -131,6 +131,9 @@ Detalle de las funciones geométricas, constantes y claves de retorno en
 | `altitude` | 11 000 | m | Altitud de crucero |
 | `loiter` | 20 min | s | Tiempo de espera |
 | `v_aprox` | 135 kt | m/s | Velocidad de aproximación |
+| `takeoff_field_length` | `None` | m | Longitud de pista de despegue FAR 25; con `None` no se aplica |
+| `landing_field_length` | `None` | m | Longitud de pista de aterrizaje FAR 25; con `None` no se aplica |
+| `airport_altitude` | 0 | m | Altitud ISA del aeropuerto (σ = ρ/ρ₀) |
 | `F_takeoff`, `F_ascent`, `F_descent`, `F_landing` | 0.970, 0.985, 0.990, 0.995 | | Fracciones de segmento (Raymer Tabla 3.2; el descenso no está en la 6.ª ed.) |
 | `descent` | `True` | | Incluye `F_descent`; `False` = Raymer 6.ª ed. (descenso dentro del crucero) |
 | `F_reserve` | 1.06 | | Factor de combustible atrapado y de reserva (6 %) |
@@ -158,6 +161,8 @@ Detalle de las funciones geométricas, constantes y claves de retorno en
 | `n_engines` | 2 | Número de motores |
 | `max_mach` | 0.82 | Mach máximo |
 | `cl_max_landing` | 2.8 | CLmax en aterrizaje |
+| `cl_max_takeoff` | `None` | CLmax en despegue; con `None`, 0.8·`cl_max_landing` (Raymer 5.3.2) |
+| `bypass_ratio` | `None` | Índice de derivación; necesario para la pista de despegue |
 | `mlw_fraction` | 0.85 | MLW / MTOW |
 | `vref_factor` | 1.23 | Vref / Vstall (CS-25) |
 | `k_vs` | 1.0 | Factor de flecha variable (1.04 si la hay) |
@@ -235,6 +240,25 @@ el historial de iteraciones y las propiedades `w_empty` y `w_fuel`.
 - `statistical_thrust_to_weight`: T/W = a·Mmax^C (Raymer Tabla 5.3, `TABLE_5_3`):
   6.ª ed. a = 0.267, C = 0.363; 7.ª ed. a = 0.297, C = 0.350.
 - `is_feasible`: comprueba W/S ≤ límite de aterrizaje.
+- `climb_thrust_to_weight`: T/W de despegue exigida por cada segmento de subida FAR 25
+  (Raymer ecs. 5.27–5.30 y tabla F.4): `T/W = G + CD0/CL + K·CL`, con CL = CLmax/(V/Vs)²,
+  × n/(n−1) si hay un motor parado y × `mlw_fraction` en los segmentos de aterrizaje.
+  Flaps de despegue: ΔCD0 = +0.02, e × 0.95; de aterrizaje: +0.07, e × 0.90; tren: +0.02
+  (Raymer 5.3.9). No se considera la caída de empuje con la velocidad.
+
+  | Segmento | V/Vs | Flaps | Tren | Motor parado | G (n = 2 / 3 / 4) |
+  |---|---|---|---|---|---|
+  | `first segment` | 1.1 | despegue | abajo | sí | 0 / 0.3 / 0.5 % |
+  | `second segment` | 1.2 | despegue | arriba | sí | 2.4 / 2.7 / 3.0 % |
+  | `approach go-around` | 1.4 | despegue | arriba | sí | 2.1 / 2.4 / 2.7 % |
+  | `landing go-around` | 1.23 | aterrizaje | abajo | no | 3.2 % |
+
+- `balanced_field_length` / `takeoff_field_wing_loading`: longitud de pista de despegue
+  por la ec. 17.113 de Raymer (Torenbeek), y la W/S máxima que la cumple.
+- `landing_field_length` / `landing_field_wing_loading`: longitud de pista de aterrizaje
+  FAR 25, `1.67·(5·(W/S)_L/(σ·CLmax) + 305 m)` (Raymer ec. 5.11), y la W/S máxima.
+- `wing_loading_limits`: todas las W/S máximas en condiciones de despegue; las de pista
+  solo si la misión da la longitud.
 
 ### Ala (`geometry/wing.py`)
 
@@ -317,8 +341,12 @@ Estado actual: **28 correctos, 2 fallos conocidos**:
 
 - `Design.max_span` se pasa a `wing_geometry` pero **no se aplica**: la
   envergadura no se recorta al límite de la caja del aeropuerto.
-- La restricción de crucero y `statistical_thrust_to_weight` se informan, pero
-  no modifican el diseño: W/S y T/W son entradas de `Design`.
+- Las restricciones (límites de W/S, T/W de subida, `statistical_thrust_to_weight`)
+  se informan, pero no modifican el diseño: W/S y T/W son entradas de `Design`.
+- El límite por velocidad de aproximación usa V_ref = 1.23·V_SR (CS-25); la ec. 5.11
+  de Raymer lleva implícito V_A = 1.3·V_S.
+- El segmento final de despegue (flaps arriba, 1.25·Vs) no se evalúa: necesita el
+  CLmax sin flaps.
 - `is_feasible` y `Design.table_6_1_metric` no se usan en el flujo principal.
 - Los módulos usan importaciones absolutas de primer nivel (`from data import …`),
   por lo que hay que ejecutar desde este directorio o añadirlo al `PYTHONPATH`.

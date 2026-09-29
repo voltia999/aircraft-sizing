@@ -184,8 +184,34 @@ $C_{L,\text{opt}} = \sqrt{C_{D0}/(3K)}$ \cite[ec.~5.14]{raymer6}:
 que se refiere al despegue dividiendo por el producto de las fracciones de
 despegue y ascenso.
 
-\paragraph{Selección.} La carga alar de diseño se elige por debajo del límite
-de aterrizaje. El crucero pediría un ala mayor; se acepta volar a un $C_L$
+\paragraph{Pista de aterrizaje.} Longitud de aterrizaje sobre un obstáculo de
+\SI{50}{ft} con senda de \SI{3}{\degree} \cite[ec.~5.11]{raymer6}, con el margen de
+FAR~25 (tabla~F.3):
+\begin{equation}
+  S_\text{LFL} = 1{,}67\left[5\,\frac{(W/S)_\text{L}}{\sigma\,C_{L,\text{máx}}} + 305\right]
+  \quad [\si{m},\ W/S \text{ en } \si{kg/m^2}],
+\end{equation}
+con $\sigma=\rho/\rho_0$ en el aeropuerto y $(W/S)_\text{L}$ al peso de aterrizaje.
+Despejando se obtiene la carga alar máxima para una pista dada, que se refiere
+al despegue dividiendo por $W_\text{MLW}/\WO$.
+
+\paragraph{Pista de despegue.} Longitud de pista compensada (\emph{balanced
+field length}) \cite[ec.~17.113]{raymer6}, en unidades imperiales:
+\begin{equation}
+  \text{BFL} = \frac{0{,}863}{1+2{,}3\,G}
+  \left(\frac{W/S}{\rho\,g\,C_{L,\text{climb}}} + h_\text{obs}\right)
+  \left(\frac{1}{T_\text{av}/W - U} + 2{,}7\right) + \frac{655}{\sqrt{\sigma}},
+\end{equation}
+con $T_\text{av} = 0{,}75\,T\,(5+\text{BPR})/(4+\text{BPR})$,
+$U = 0{,}01\,C_{L,\text{máx,TO}} + 0{,}02$, $C_{L,\text{climb}} = C_{L,\text{máx,TO}}/1{,}2^2$,
+$h_\text{obs}=\SI{35}{ft}$ y $G$ el exceso del gradiente de subida con un motor parado
+sobre el mínimo del segundo segmento. El $C_{L,\text{máx}}$ de despegue es
+$\approx 0{,}8$ veces el de aterrizaje \cite[cap.~5]{raymer6}. La BFL es lineal
+en $W/S$, así que se despeja la carga alar máxima para una pista dada.
+
+\paragraph{Selección.} La carga alar de diseño se elige por debajo de la menor
+de las cargas alares máximas, todas referidas al despegue
+\cite[cap.~5]{raymer6}. El crucero pediría un ala mayor; se acepta volar a un $C_L$
 algo superior al óptimo a cambio de un ala más ligera y de menor
 resistencia~\cite{guion}.
 
@@ -198,6 +224,21 @@ con $a=\num{0.267}$, $C=\num{0.363}$ en la 6.ª edición y $a=\num{0.297}$,
 $C=\num{0.350}$ en la 7.ª. En un birreactor la subida con un motor inoperativo
 exigida por CS-25~\cite{cs25} eleva el valor adoptado por encima del
 estadístico; el empuje total es $T = (T/W)\,\WO\,g$.
+
+\paragraph{Subida.} Cada segmento de subida de FAR~25 (tabla~F.4 de
+Raymer~\cite{raymer6}) fija un gradiente mínimo $G$. De $G=(T-D)/W$ y la polar
+con $L=W$ \cite[ecs.~5.27--5.29]{raymer6}:
+\begin{equation}
+  \frac{T}{W} = G + \frac{C_{D0}}{C_L} + K\,C_L,
+  \qquad C_L = \frac{C_{L,\text{máx}}}{(V/V_S)^2},
+\end{equation}
+multiplicada por $n/(n-1)$ si hay un motor parado y por $W_\text{MLW}/\WO$ en los
+segmentos de aterrizaje. Los flaps de despegue suman $0{,}02$ a $C_{D0}$ y reducen
+$e$ un \SI{5}{\percent}; los de aterrizaje, $0{,}07$ y un \SI{10}{\percent}; el
+tren, $0{,}02$ \cite[cap.~5]{raymer6}. Se evalúan el primer y segundo segmento
+($V_\text{LOF}\approx1{,}1\,V_S$ y $V_2 = 1{,}2\,V_S$, flaps de despegue), el motor y
+al aire en aproximación ($1{,}4\,V_S$) y en aterrizaje ($1{,}23\,V_S$, todos los
+motores). La $T/W$ elegida debe superar la mayor de ellas.
 
 \subsection{Geometría del ala}
 Para un ala trapezoidal de alargamiento $A$ y estrechamiento $\lambda$:

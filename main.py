@@ -24,17 +24,16 @@ def run(case_name: str, refined: bool = True, edition: int = None,
         mission.descent = descent
 
     result = weight.resolve(mission, aero, design, refined=refined)
-    limits = {
-        "landing": constraints.landing_wing_loading(mission, design),
-        "cruise": constraints.cruise_wing_loading(mission, aero),
-    }
+    limits = constraints.wing_loading_limits(mission, aero, design)
+    limits["cruise optimum"] = constraints.cruise_wing_loading(mission, aero)
+    climb = constraints.climb_thrust_to_weight(aero, design)
 
     w = wing.wing_geometry(result.w0, aero, design, max_span=design.max_span)
     f = fuselage.fuselage_geometry(design.decks, w0=result.w0,
                                   edition=design.raymer_edition, **design.fuselage)
     t = tail.tail_geometry(w, f["length"],
                            tail.TailCoefficients(arm_fraction=design.tail_arm_fraction))
-    return {"weights": result, "limits": limits, "design": design,
+    return {"weights": result, "limits": limits, "climb": climb, "design": design,
             "wing": w, "fuselage": f, "tail": t, "reference": reference}
 
 def report(out: dict) -> None:
@@ -70,6 +69,8 @@ def report(out: dict) -> None:
     row("Total thrust", d.thrust_to_weight * r.w0 * G / 1e3, "kN", ref.thrust / 1e3, ",.0f")
     for name, value in out["limits"].items():
         row(f"Max W/S {name}", value, "kg/m2")
+    for name, value in out["climb"].items():
+        row(f"T/W {name}", value, fmt=".3f")
 
     header("Wing")
     row("Area S", w["S"], "m2", ref.wing_area)
