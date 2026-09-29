@@ -1,0 +1,369 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-tabla,es-nodecimaldot]{babel}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+
+\sisetup{output-decimal-marker={,}, group-separator={\,}, group-minimum-digits=4, group-digits=integer}
+
+\newcommand{\WO}{W_0}
+
+\title{Dimensionamiento preliminar de aeronaves de transporte\\[4pt]
+       \large Metodología implementada en el código \texttt{sizing}}
+\author{Diseño, Cálculo y Certificación de Aeronaves y Vehículos Espaciales}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este documento resume las ecuaciones que implementa el código de
+dimensionamiento. El método es el de Raymer~\cite{raymer6,raymer7} en sus dos
+niveles: el \emph{first-order sizing} (capítulo~3), que obtiene el peso máximo
+al despegue $\WO$ a partir de la misión y de correlaciones estadísticas, y el
+\emph{initial sizing} (capítulos~5 y~6), que fija la carga alar y la relación
+empuje-peso, refina las fracciones de peso y dimensiona ala, fuselaje y
+empenaje. Donde las ediciones~6 y~7 del libro difieren se dan ambos juegos de
+coeficientes; el caso de estudio de referencia es el del guion de la
+asignatura~\cite{guion}.
+\end{abstract}
+
+\section{Planteamiento}
+
+El peso al despegue se descompone en tripulación, carga de pago, combustible y
+peso en vacío. Expresando los dos últimos como fracciones de $\WO$
+\cite[ec.~3.4]{raymer6}:
+\begin{equation}
+  \WO = \frac{W_\text{crew} + W_\text{payload}}
+             {1 - \left(W_f/\WO\right) - \left(W_e/\WO\right)} .
+  \label{eq:w0}
+\end{equation}
+Como $W_e/\WO$ depende de $\WO$, la ecuación se resuelve por punto fijo: se
+supone $\WO$, se evalúa el segundo miembro y se repite hasta que la variación
+es menor que la tolerancia (\SI{0.01}{kg} en el código). Los dos niveles del
+método solo difieren en cómo se estiman $W_f/\WO$ y $W_e/\WO$
+(tabla~\ref{tab:niveles}).
+
+\begin{table}[h]
+\centering
+\caption{Diferencias entre los dos niveles de cálculo.}
+\label{tab:niveles}
+\begin{tabular}{lll}
+\toprule
+Término & First-order sizing & Initial sizing \\
+\midrule
+Ascenso            & \num{0.985} (tabla 3.2)            & $1{,}0065-0{,}0325M$ (ec.~6.9) \\
+$(L/D)$ de crucero & $0{,}866\,(L/D)_\text{máx}$        & Polar parabólica (ec.~6.13) \\
+$W_e/\WO$          & Tabla 3.1 (solo $\WO$)             & Tabla 6.1 ($\WO$, $A$, $T/W$, $W/S$, $M_\text{máx}$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Todas las masas se expresan en \si{kg} y la carga alar en \si{kg/m^2}; se
+multiplica por $g=\SI{9.81}{m/s^2}$ allí donde la ecuación exige fuerza por
+unidad de superficie. Las propiedades del aire (densidad y velocidad del
+sonido a la altitud de crucero) se toman de la atmósfera estándar
+internacional~\cite{isa}.
+
+%----------------------------------------------------------------------------
+\section{First-order sizing}
+
+\subsection{Tripulación y carga de pago}
+\begin{equation}
+  W_\text{payload} = n_\text{pax}\, m_\text{pax}, \qquad
+  W_\text{crew} = n_\text{crew}\, m_\text{crew}.
+\end{equation}
+El guion~\cite{guion} adopta \SI{100}{kg} por pasajero con su equipaje y
+\SI{95}{kg} por tripulante; el número mínimo de tripulantes de cabina es uno
+por cada 50 asientos instalados~\cite{airops}.
+
+\subsection{Fracciones de peso de la misión}
+Cada segmento $i$ se representa por la fracción $W_i/W_{i-1}$; su producto da
+la fracción al final de la misión, $W_x/\WO$. Los segmentos cortos toman los
+valores históricos de la tabla~3.2 de Raymer~\cite{raymer6}: arranque y
+despegue \num{0.970}, ascenso \num{0.985} y aterrizaje \num{0.995}. Raymer
+incluye el descenso en el crucero; el código permite además un segmento de
+descenso explícito (\num{0.990}), desactivable por caso.
+
+\paragraph{Crucero.} Ecuación de Breguet del alcance para un reactor
+\cite[ec.~3.6]{raymer6}:
+\begin{equation}
+  \frac{W_\text{cr}}{W_\text{cr-1}} = \exp\!\left[\frac{-R\,C}{V\,(L/D)}\right],
+  \qquad V = M\,a(h),
+\end{equation}
+con $R$ el alcance, $C$ el consumo específico de empuje (tabla~3.3,
+\SI{0.5}{h^{-1}} en crucero para un turbofán de alto índice de derivación) y
+$a(h)$ la velocidad del sonido ISA a la altitud de crucero.
+
+\paragraph{Espera.} Ecuación de la autonomía \cite[ec.~3.8]{raymer6}, con
+$E$ el tiempo de espera y $C=\SI{0.4}{h^{-1}}$ (tabla~3.3):
+\begin{equation}
+  \frac{W_\text{lt}}{W_\text{lt-1}} = \exp\!\left[\frac{-E\,C}{(L/D)}\right].
+\end{equation}
+
+\subsection{Eficiencia aerodinámica}
+La $(L/D)$ máxima se estima con el alargamiento mojado
+\cite[ec.~3.12]{raymer6}:
+\begin{equation}
+  (L/D)_\text{máx} = K_{LD}\sqrt{\frac{A}{S_\text{wet}/S_\text{ref}}},
+  \qquad K_{LD} = 15{,}5 \text{ (reactor civil)},
+\end{equation}
+con $S_\text{wet}/S_\text{ref}$ de la figura~3.6. Para un reactor el crucero
+de máximo alcance se vuela a $0{,}866\,(L/D)_\text{máx}$ y la espera a
+$(L/D)_\text{máx}$ \cite[cap.~3]{raymer6}.
+
+\subsection{Fracción de combustible}
+Con un \SI{6}{\percent} para reservas y combustible atrapado
+\cite[ec.~3.13]{raymer6}:
+\begin{equation}
+  \frac{W_f}{\WO} = 1{,}06\left(1 - \frac{W_x}{\WO}\right),
+  \qquad \frac{W_x}{\WO} = \prod_i \frac{W_i}{W_{i-1}} .
+\end{equation}
+
+\subsection{Fracción de peso en vacío}
+Correlación estadística de la tabla~3.1 para transporte a reacción, en
+unidades métricas:
+\begin{equation}
+  \frac{W_e}{\WO} = a\,\WO^{\,C}\,K_{vs},
+\end{equation}
+con $a=\num{0.97}$, $C=\num{-0.06}$ en la 6.ª edición~\cite{raymer6} y
+$a=\num{1.202}$, $C=\num{-0.072}$ en la 7.ª~\cite{raymer7}. $K_{vs}=1{,}04$
+para ala de flecha variable y 1 para ala fija. Con ambas fracciones se itera
+la ecuación~\eqref{eq:w0}.
+
+%----------------------------------------------------------------------------
+\section{Initial sizing}
+
+\subsection{Carga alar}
+
+\paragraph{Aterrizaje.} La velocidad de aproximación limita la carga alar. De
+$L=W$ en pérdida con $C_{L,\text{máx}}$ de aterrizaje \cite[ec.~5.6]{raymer6}:
+\begin{equation}
+  \left(\frac{W}{S}\right)_\text{L} = \frac{1}{g}\,\frac{1}{2}\rho_0\,
+  V_\text{stall}^2\,C_{L,\text{máx}},
+  \qquad V_\text{stall} = \frac{V_\text{app}}{1{,}23},
+\end{equation}
+con $\rho_0$ al nivel del mar y el factor $1{,}23$ de CS-25~\cite{cs25}. El
+valor se refiere al despegue dividiendo por $W_\text{MLW}/\WO$.
+
+\paragraph{Crucero.} La resistencia se modela con la polar parabólica
+$C_D = C_{D0} + K C_L^2$, donde
+\begin{equation}
+  C_{D0} = C_{fe}\,\frac{S_\text{wet}}{S_\text{ref}}, \qquad
+  K = \frac{1}{\pi A e},
+\end{equation}
+con $C_{fe}=\num{0.0026}$ para transporte civil \cite[ec.~12.23,
+tabla~12.3]{raymer6}. El factor de Oswald sigue las correlaciones de Raymer
+\cite[ecs.~12.48--12.49]{raymer6}:
+\begin{equation}
+  e =
+  \begin{cases}
+    1{,}78\left(1-0{,}045A^{0{,}68}\right) - 0{,}64,
+      & \Lambda_\text{LE} \le 30^\circ, \\[4pt]
+    4{,}61\left(1-0{,}045A^{0{,}68}\right)\left(\cos\Lambda_\text{LE}\right)^{0{,}15} - 3{,}1,
+      & \Lambda_\text{LE} > 30^\circ,
+  \end{cases}
+\end{equation}
+donde la flecha del borde de ataque se obtiene de la de la línea del
+\SI{25}{\percent} para un ala trapezoidal:
+\begin{equation}
+  \tan\Lambda_\text{LE} = \tan\Lambda_{c/4} + \frac{1-\lambda}{A\,(1+\lambda)} .
+\end{equation}
+La carga alar de máximo alcance para un reactor corresponde a
+$C_{L,\text{opt}} = \sqrt{C_{D0}/(3K)}$ \cite[ec.~5.14]{raymer6}:
+\begin{equation}
+  \left(\frac{W}{S}\right)_\text{cr} = \frac{q}{g}\,\sqrt{\frac{\pi A e\,C_{D0}}{3}},
+  \qquad q = \tfrac{1}{2}\rho V^2,
+\end{equation}
+que se refiere al despegue dividiendo por el producto de las fracciones de
+despegue y ascenso.
+
+\paragraph{Selección.} La carga alar de diseño se elige por debajo del límite
+de aterrizaje. El crucero pediría un ala mayor; se acepta volar a un $C_L$
+algo superior al óptimo a cambio de un ala más ligera y de menor
+resistencia~\cite{guion}.
+
+\subsection{Relación empuje-peso}
+Correlación estadística frente al Mach máximo (tabla~5.3):
+\begin{equation}
+  \frac{T}{\WO} = a\,M_\text{máx}^{\,C},
+\end{equation}
+con $a=\num{0.267}$, $C=\num{0.363}$ en la 6.ª edición y $a=\num{0.297}$,
+$C=\num{0.350}$ en la 7.ª. En un birreactor la subida con un motor inoperativo
+exigida por CS-25~\cite{cs25} eleva el valor adoptado por encima del
+estadístico; el empuje total es $T = (T/W)\,\WO\,g$.
+
+\subsection{Geometría del ala}
+Para un ala trapezoidal de alargamiento $A$ y estrechamiento $\lambda$:
+\begin{equation}
+  S = \frac{\WO}{W/S}, \quad
+  b = \sqrt{A\,S}, \quad
+  c_r = \frac{2S}{b\,(1+\lambda)}, \quad
+  c_t = \lambda\,c_r, \quad
+  \bar{c} = \frac{2}{3}\,c_r\,\frac{1+\lambda+\lambda^2}{1+\lambda}.
+\end{equation}
+
+\subsection{Fracción de peso en vacío refinada}
+La tabla~6.1 añade la influencia del alargamiento, la relación empuje-peso,
+la carga alar y el Mach máximo. En la 6.ª edición~\cite{raymer6}:
+\begin{equation}
+  \frac{W_e}{\WO} = \left[a + b\,\WO^{\,C_1} A^{C_2}
+    \left(\frac{T}{\WO}\right)^{C_3}\left(\frac{\WO}{S}\right)^{C_4}
+    M_\text{máx}^{\,C_5}\right] K_{vs},
+\end{equation}
+con $a=\num{0.32}$, $b=\num{0.66}$, $C_1=\num{-0.13}$, $C_2=\num{0.30}$,
+$C_3=\num{0.06}$, $C_4=\num{-0.05}$, $C_5=\num{0.05}$ (métrico). La 7.ª
+edición~\cite{raymer7} elimina el término aditivo:
+\begin{equation}
+  \frac{W_e}{\WO} = a\,\WO^{\,C_1} A^{C_2}
+    \left(\frac{T}{\WO}\right)^{C_3}\left(\frac{\WO}{S}\right)^{C_4}
+    M_\text{máx}^{\,C_5}\,K_{vs},
+\end{equation}
+con $a=\num{0.869}$, $C_1=\num{-0.037}$, $C_2=\num{0.398}$,
+$C_3=\num{0.100}$, $C_4=\num{-0.161}$, $C_5=\num{0.050}$. Estos coeficientes
+solo se dan en unidades imperiales ($\WO$ en \si{lb}, $\WO/S$ en
+\si{lb/ft^2}); para usar \si{kg} y \si{kg/m^2} se convierte la constante:
+\begin{equation}
+  a_\text{SI} = a_\text{fps}\,k_m^{\,C_1}\left(\frac{k_m}{k_S}\right)^{C_4},
+  \qquad k_m = \SI{2.20462}{lb/kg}, \quad k_S = \SI{10.7639}{ft^2/m^2},
+\end{equation}
+lo que da $a_\text{SI} = \num{1.089}$.
+
+\subsection{Fracciones de misión refinadas}
+
+\paragraph{Despegue.} Se mantiene \num{0.970}, dentro del rango
+$0{,}97$--$0{,}99$ de la ecuación~6.8.
+
+\paragraph{Ascenso y aceleración.} Hasta el Mach de crucero, partiendo de
+$M=0{,}1$ \cite[ec.~6.9]{raymer6}:
+\begin{equation}
+  \frac{W_\text{cl}}{W_\text{cl-1}} = 1{,}0065 - 0{,}0325\,M .
+\end{equation}
+
+\paragraph{Crucero.} Misma ecuación de Breguet \cite[ec.~6.11]{raymer6},
+pero con la $L/D$ evaluada con la polar en la condición de vuelo, usando
+$L=W$ \cite[ec.~6.13]{raymer6}:
+\begin{equation}
+  \frac{L}{D} = \frac{1}{\dfrac{q\,C_{D0}}{W/S} + \dfrac{W}{S}\,\dfrac{1}{q\,\pi A e}} .
+\end{equation}
+La carga alar de esta expresión es la del crucero, no la del despegue
+\cite[cap.~6]{raymer6}; el guion adopta \SI{550}{kg/m^2} frente a los
+\SI{600}{kg/m^2} de diseño~\cite{guion}.
+
+\paragraph{Espera, aterrizaje y reservas.} Sin cambios respecto al
+first-order sizing. Con las nuevas fracciones se recalcula $W_f/\WO$ y se
+vuelve a iterar la ecuación~\eqref{eq:w0} con la fracción en vacío de la
+tabla~6.1; con $\WO$ refinado se recalculan la superficie alar, la geometría
+del ala y el empuje.
+
+\subsection{Fuselaje}
+En un avión de pasajeros el fuselaje lo define la cabina; la estadística solo
+sirve de comprobación~\cite{guion}.
+
+\paragraph{Sección.} El ancho interior de cabina es la suma de asientos,
+pasillos y holguras; el exterior añade estructura y aislamiento. La altura
+apila quilla, bodega (contenedor LD3), suelo y cabina de cada cubierta y
+techo. Si la sección no es circular se usa un diámetro equivalente obtenido
+del área de la sección \cite[cap.~6]{raymer6}:
+\begin{equation}
+  d_\text{eq} = \sqrt{w\,h} .
+\end{equation}
+
+\paragraph{Longitud.} La longitud de cabina suma las filas de cada clase
+($n_\text{filas}\times$ paso), cocinas, aseos, pares de salidas tipo~A
+(uno por cada 110 asientos, CS~25.807~\cite{cs25}) y escaleras. La longitud
+total añade morro y cono de cola:
+\begin{equation}
+  L_f = L_\text{cabina} + L_\text{morro} + L_\text{cono}.
+\end{equation}
+El morro y el cono se obtienen del criterio de contorno de Raymer
+\cite[fig.~8.2]{raymer6} (ángulos máximos de las superficies superior e inferior respecto a la corriente) o
+se fijan como decisión de proyecto.
+
+\paragraph{Comprobaciones.} Relación de finura $L_f/d$, cuyo óptimo
+aerodinámico subsónico está entre 6 y 8 \cite[cap.~6]{raymer6}, y longitud
+estadística de la tabla~6.3:
+\begin{equation}
+  L_f = a\,\WO^{\,C},
+\end{equation}
+con $a=\num{0.287}$, $C=\num{0.43}$ en la 6.ª edición y $a=\num{0.69}$,
+$C=\num{0.36}$ en la 7.ª (\si{m}, \si{kg}).
+
+\subsection{Empenaje}
+Método de los coeficientes de volumen de cola
+\cite[ecs.~6.28--6.29]{raymer6}:
+\begin{equation}
+  S_\text{HT} = \frac{c_\text{HT}\,\bar{c}\,S}{L_\text{HT}}, \qquad
+  S_\text{VT} = \frac{c_\text{VT}\,b\,S}{L_\text{VT}},
+\end{equation}
+con $c_\text{HT}=1{,}00$ y $c_\text{VT}=0{,}09$ para transporte a reacción
+(tabla~6.4). El brazo de cola se toma como fracción de la longitud del
+fuselaje: \SIrange{50}{55}{\percent} con motores en el ala y
+\SIrange{45}{50}{\percent} con motores traseros \cite[cap.~6]{raymer6}.
+
+Las superficies de mando se estiman como fracciones de la superficie que las
+porta: alerones $\approx\SI{5}{\percent}$ de $S$, timón de profundidad
+$\approx\SI{30}{\percent}$ de $S_\text{HT}$ y timón de dirección
+$\approx\SI{30}{\percent}$ de $S_\text{VT}$. Si el mando ocupa toda la
+envergadura de la superficie, la fracción de área coincide con la de cuerda
+de la tabla~6.5~\cite{raymer6,guion}.
+
+%----------------------------------------------------------------------------
+\section{Procedimiento}
+\begin{enumerate}
+  \item Requisitos de misión: pasajeros, alcance, Mach, altitud, espera,
+        velocidad de aproximación.
+  \item First-order sizing: $W_\text{crew}+W_\text{payload}$, fracciones de
+        misión, $W_f/\WO$, tabla~3.1 e iteración de~\eqref{eq:w0}.
+  \item Initial sizing: límites de carga alar, elección de $W/S$ y $T/W$,
+        tabla~6.1, fracciones refinadas e iteración de~\eqref{eq:w0}.
+  \item Geometría con el $\WO$ refinado: ala, fuselaje y empenaje, en este
+        orden, porque el empenaje necesita la cuerda media y la envergadura
+        del ala y la longitud del fuselaje.
+\end{enumerate}
+
+%----------------------------------------------------------------------------
+\begin{thebibliography}{9}
+
+\bibitem{raymer6}
+D.~P. Raymer.
+\newblock \emph{Aircraft Design: A Conceptual Approach}, 6.ª ed.
+\newblock AIAA Education Series. American Institute of Aeronautics and
+  Astronautics, Reston, VA, 2018.
+
+\bibitem{raymer7}
+D.~P. Raymer.
+\newblock \emph{Aircraft Design: A Conceptual Approach}, 7.ª ed.
+\newblock AIAA Education Series. American Institute of Aeronautics and
+  Astronautics, Reston, VA.
+
+\bibitem{guion}
+\emph{Caso completo de dimensionamiento de una aeronave de transporte de
+  pasajeros} (versión~4).
+\newblock Diseño, Cálculo y Certificación de Aeronaves y Vehículos
+  Espaciales, Máster Universitario en Ingeniería Aeronáutica.
+
+\bibitem{isa}
+ISO 2533:1975.
+\newblock \emph{Standard Atmosphere}.
+\newblock International Organization for Standardization, 1975.
+
+\bibitem{cs25}
+EASA.
+\newblock \emph{Certification Specifications and Acceptable Means of
+  Compliance for Large Aeroplanes (CS-25)}.
+\newblock European Union Aviation Safety Agency.
+
+\bibitem{airops}
+Reglamento (UE) n.º 965/2012 de la Comisión (Air OPS), Anexo~III (Part-ORO),
+ORO.CC.100, y Anexo~IV (Part-CAT), CAT.POL.MAB.100.
+
+\end{thebibliography}
+
+\end{document}

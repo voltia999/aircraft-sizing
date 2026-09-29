@@ -20,3 +20,6 @@ htmlcov/
 .idea/
 *.swp
 .DS_Store
+
+# Casos de aviones (de momento solo en local)
+cases/
