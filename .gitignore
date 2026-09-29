@@ -23,3 +23,22 @@ htmlcov/
 
 # Casos de aviones (de momento solo en local)
 cases/
+
+# LaTeX (archivos auxiliares de compilación; el PDF sí se versiona)
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.synctex(busy)
+*.toc
+*.xdv
