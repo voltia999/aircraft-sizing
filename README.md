@@ -153,7 +153,7 @@ Detalle de las funciones geométricas, constantes y claves de retorno en
 | Campo | Defecto | Descripción |
 |---|---|---|
 | `wing_loading` | 600 kg/m² | Carga alar W0/S elegida |
-| `cruise_wing_loading` | `None` | W/S para la polar de crucero (`ld_cruise_refined`); con `None` usa `wing_loading` |
+| `cruise_wing_loading` | `None` | W/S forzada para la polar de crucero; con `None` se usa la W/S real a mitad de crucero |
 | `thrust_to_weight` | 0.30 | T/W |
 | `n_engines` | 2 | Número de motores |
 | `max_mach` | 0.82 | Mach máximo |
@@ -185,7 +185,7 @@ de los demás campos.
 | `cruise_density`, `velocity_rel` | ISA (`ambiance`) a `altitude`; V = M·a |
 | `ld_max` | `aero.ld_max` si está fijado; si no, K_LD · √(AR / (Swet/Sref)) |
 | `ld_cruise` | 0.866 · (L/D)max (jet) |
-| `ld_cruise_refined` | 1 / (q·CD0/(W/S) + (W/S)·K/q), con q = ½ρV² y W/S = `cruise_wing_loading`·g (si es `None`, `wing_loading`) |
+| `ld_cruise_refined` | 1 / (q·CD0/(W/S) + (W/S)·K/q), con q = ½ρV²; W/S en N/m² (el argumento `wing_loading`, o `cruise_wing_loading`, o `wing_loading` de diseño) |
 | `sweep_le` | atan(tan Λc/4 + (1−λ) / (AR(1+λ))) |
 | `oswald` | e₀ = 1 − 0.045·AR^0.68; si Λ_LE > 30°: 4.61·e₀·cos(Λ_LE)^0.15 − 3.1, si no: 1.78·e₀ − 0.64 |
 | `cd0` | Cfe · Swet/Sref |
@@ -195,7 +195,11 @@ de los demás campos.
 
 - **Peso fijo**: `w_fixed = n_pax·m_pax + n_trip·m_trip`.
 - **Crucero** (Breguet): `F_cruise = exp(−R·c / (V·(L/D)crucero))`; con `design`
-  (cálculo refinado) usa `ld_cruise_refined`, si no `ld_cruise`.
+  (cálculo refinado) usa `ld_cruise_refined` con la W/S real a mitad de crucero,
+  si no `ld_cruise`.
+- **W/S a mitad de crucero** (`mid_cruise_wing_loading`, Raymer nota a la ec. 6.13):
+  `(W/S)_mid = (W0/S)·F_despegue·F_ascenso·(1 + F_crucero)/2`, iterada porque
+  `F_crucero` depende de la L/D. Si `Design.cruise_wing_loading` está fijado, se usa ese valor.
 - **Espera** (Breguet): `F_loiter = exp(−E·c / (L/D)max)`.
 - **Subida refinada** (Raymer 6.3.6): `F_ascent_refined = 1.0065 − 0.0325·M`.
 - **Combustible**: `Wf/W0 = F_reserve · (1 − ∏ fracciones)`; `F_descent` solo

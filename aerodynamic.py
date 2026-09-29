@@ -34,8 +34,13 @@ def cd0(aero:Aerodynamics) -> float:
 def k(aero:Aerodynamics) -> float:
     return 1 / (np.pi * aero.AR * oswald(aero))
 
-def ld_cruise_refined(aero: Aerodynamics, mission: Mission, design: Design) -> float:
-    """L/D at the cruise CL from the parabolic polar CD = CD0 + K*CL^2."""
+def ld_cruise_refined(aero: Aerodynamics, mission: Mission, design: Design,
+                      wing_loading: float = None) -> float:
+    """L/D at the cruise CL from the parabolic polar CD = CD0 + K*CL^2 (Raymer 6.13).
+
+    wing_loading [kg/m2] is the actual cruise value; without it, the forced
+    design.cruise_wing_loading or, failing that, the takeoff wing loading.
+    """
     q = 0.5 * cruise_density(mission) * velocity_rel(mission) ** 2
-    ws = (design.cruise_wing_loading or design.wing_loading) * G   # kg/m2 -> N/m2
+    ws = (wing_loading or design.cruise_wing_loading or design.wing_loading) * G   # kg/m2 -> N/m2
     return 1 / (q * cd0(aero) / ws + ws * k(aero) / q)

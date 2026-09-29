@@ -252,9 +252,18 @@ $L=W$ \cite[ec.~6.13]{raymer6}:
 \begin{equation}
   \frac{L}{D} = \frac{1}{\dfrac{q\,C_{D0}}{W/S} + \dfrac{W}{S}\,\dfrac{1}{q\,\pi A e}} .
 \end{equation}
-La carga alar de esta expresión es la del crucero, no la del despegue
-\cite[cap.~6]{raymer6}; el guion adopta \SI{550}{kg/m^2} frente a los
-\SI{600}{kg/m^2} de diseño~\cite{guion}.
+La carga alar de esta expresión es la real en la condición evaluada, no la del
+despegue \cite[cap.~6]{raymer6}: la de despegue multiplicada por las fracciones
+de los segmentos anteriores \cite[cap.~5]{raymer6}. Se evalúa en un único punto
+a mitad de crucero, como admite Raymer para el análisis inicial
+\cite[cap.~12]{raymer6}:
+\begin{equation}
+  \left(\frac{W}{S}\right)_\text{cr} = \frac{\WO}{S}\,
+  \frac{W_\text{to}}{\WO}\,\frac{W_\text{cl}}{W_\text{cl-1}}\,
+  \frac{1 + W_\text{cr}/W_\text{cr-1}}{2},
+\end{equation}
+que se itera porque la fracción de crucero depende de la $L/D$. El guion fija
+en su lugar \SI{550}{kg/m^2}~\cite{guion}; el código permite forzar ese valor.
 
 \paragraph{Espera, aterrizaje y reservas.} Sin cambios respecto al
 first-order sizing. Con las nuevas fracciones se recalcula $W_f/\WO$ y se

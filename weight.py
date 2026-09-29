@@ -31,10 +31,40 @@ def w_crew(mission: Mission) -> float:
 def w_fixed(mission: Mission) -> float:
     return w_crew(mission) + w_payload(mission)
 
-def F_cruise(mission: Mission, aero: Aerodynamics, design: Design = None) -> float:
-    """Breguet; with a design, L/D from the polar at the cruise CL."""
-    ld = ld_cruise_refined(aero, mission, design) if design else ld_cruise(aero)
+def breguet_cruise(mission: Mission, aero: Aerodynamics, ld: float) -> float:
+    """Raymer eq. 6.11, jet."""
     return np.exp(- (mission.range * aero.c_cruise) / (velocity_rel(mission) * ld))
+
+def mid_cruise_wing_loading(mission: Mission, aero: Aerodynamics, design: Design,
+                            start_of_cruise: float, tol: float = 1e-9) -> float:
+    """Actual W/S at mid-cruise [kg/m2] (Raymer note to eq. 6.13 and 12.5.10).
+
+    (W/S)_mid = (W0/S) * start_of_cruise * (1 + F_cruise) / 2, iterated because
+    F_cruise depends on the L/D at that W/S. A forced design.cruise_wing_loading
+    takes precedence.
+    """
+    if design.cruise_wing_loading:
+        return design.cruise_wing_loading
+    ws_start = design.wing_loading * start_of_cruise
+    f = 1.0
+    for _ in range(100):
+        ws = ws_start * (1 + f) / 2
+        f_new = breguet_cruise(mission, aero, ld_cruise_refined(aero, mission, design, ws))
+        if abs(f_new - f) < tol:
+            break
+        f = f_new
+    return ws_start * (1 + f_new) / 2
+
+def F_cruise(mission: Mission, aero: Aerodynamics, design: Design = None,
+             start_of_cruise: float = 1.0) -> float:
+    """Breguet; with a design, L/D from the polar at the mid-cruise W/S.
+
+    start_of_cruise is W/W0 at the beginning of cruise (takeoff x climb).
+    """
+    if design is None:
+        return breguet_cruise(mission, aero, ld_cruise(aero))
+    ws = mid_cruise_wing_loading(mission, aero, design, start_of_cruise)
+    return breguet_cruise(mission, aero, ld_cruise_refined(aero, mission, design, ws))
 
 def F_loiter(mission: Mission, aero: Aerodynamics) -> float:
     return np.exp((-mission.loiter * aero.c_loiter) / ld_max(aero))
@@ -49,7 +79,8 @@ def F_fuel(mission: Mission, aero: Aerodynamics, refined: bool = False,
     f_descent = mission.F_descent if mission.descent else 1.0
     w_x = (mission.F_takeoff
             * f_ascent
-            * F_cruise(mission, aero, design if refined else None)
+            * F_cruise(mission, aero, design if refined else None,
+                       mission.F_takeoff * f_ascent)
             * F_loiter(mission, aero)
             * f_descent
             * mission.F_landing)
