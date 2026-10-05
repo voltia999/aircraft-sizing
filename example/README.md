@@ -1,5 +1,25 @@
 # Ejemplo: guion V4 paso a paso
 
+Hay dos formas de recorrer el guion:
+
+| Archivo | Para qué |
+|---|---|
+| `a320_guion_v4.ipynb` | **Tutorial del código**: dimensiona el avión del guion paso a paso, desde definir `Mission`, `Aerodynamics` y `Design` hasta llamar a cada método, leer sus resultados, explorar hipótesis con `dataclasses.replace` y ejecutar el caso completo con `main.run`. Es el mejor punto de partida |
+| `a320_guion_v4.py` | El caso (`case()`) y un recorrido en texto para la terminal que compara cada valor con el guion |
+
+La notebook se ve ya ejecutada en GitHub. Para ejecutarla tú:
+
+```bash
+pip install -r requirements.txt
+jupyter notebook example/a320_guion_v4.ipynb   # o ábrela en VS Code
+```
+
+La notebook escribe las entradas a mano, para enseñar cómo se define un caso, y
+comprueba al final que coinciden con las de `a320_guion_v4.py`. Si cambias una
+y no la otra, esa celda falla.
+
+## `a320_guion_v4.py`
+
 `a320_guion_v4.py` reproduce
 `docs/Dimensionamiento_preliminar_aeronave_Raymer_V4.pdf` (narrow-body de 150
 plazas, Raymer 7.ª ed.). El archivo es a la vez:

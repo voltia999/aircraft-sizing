@@ -10,6 +10,9 @@ dist/
 venv/
 env/
 
+# Jupyter
+.ipynb_checkpoints/
+
 # Tests y cobertura
 .pytest_cache/
 .coverage

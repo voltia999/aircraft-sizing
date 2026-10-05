@@ -23,9 +23,10 @@ alar en **kg/m²**.
 Requiere Python 3.10+. Desde este directorio:
 
 ```bash
-pip install -r requirements.txt     # numpy, ambiance (atmósfera ISA), pytest
+pip install -r requirements.txt     # numpy, ambiance (ISA), pytest; matplotlib y jupyter para la notebook
 python main.py                      # dimensiona el caso del guion V4 e imprime el informe
 python example/a320_guion_v4.py     # el mismo caso, paso a paso frente al PDF del guion
+jupyter notebook example/a320_guion_v4.ipynb   # el guion explicado, con ecuaciones y gráficas
 python -m pytest tests              # regresión contra los guiones
 ```
 
@@ -38,7 +39,7 @@ Cada carpeta tiene su propio README con el detalle.
 
 | Carpeta | Qué contiene | Léelo si… |
 |---|---|---|
-| [`example/`](example/README.md) | El caso del guion V4, que también es un recorrido paso a paso | empiezas: es la mejor forma de ver el método completo |
+| [`example/`](example/README.md) | El caso del guion V4, con una notebook que lo explica paso a paso | empiezas: es la mejor forma de ver el método completo |
 | [`cases/`](cases/README.md) | Tus casos de trabajo (no se versionan) | quieres dimensionar otro avión |
 | [`core/`](core/README.md) | Entradas (`Mission`, `Aerodynamics`, `Design`, `Reference`), `Result` y constantes | necesitas saber qué significa cada campo y sus unidades |
 | [`methods/`](methods/README.md) | Aerodinámica, pesos (iteración de W0) y restricciones | quieres ver o cambiar una ecuación de Raymer |
