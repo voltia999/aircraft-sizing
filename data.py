@@ -55,6 +55,7 @@ class Design:
     decks: list = field(default_factory=list)
     fuselage: dict = field(default_factory=dict)   # fixed choices: diameter, nose, tailcone [m]
     tail_arm_fraction: float = 0.50    # tail arm / fuselage length
+    tail_arm_length: str = "cabin"     # Lf for the tail arm: "cabin" layout or "statistical" (Table 6.3)
 
 
 @dataclass

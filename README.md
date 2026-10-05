@@ -11,23 +11,28 @@ hipótesis aerodinámicas y de diseño calcula:
 4. **Fuselaje**: sección y longitud a partir de la distribución de cabina.
 5. **Empenaje**: superficies de cola por coeficientes de volumen y superficies de mando.
 
-Cada resultado se compara con los datos reales de un avión de referencia
-(A300, A310, A350, A380, 707, 727, 737, 747).
+Cada resultado se compara con los datos de un avión de referencia.
 
 Todas las magnitudes están en SI; las **masas se expresan en kg** y la carga
 alar en **kg/m²**.
 
 ---
 
-## Instalación
+## Primeros pasos
 
-Requiere Python 3.10+ y:
+Requiere Python 3.10+. Desde este directorio:
 
 ```bash
-pip install numpy ambiance pytest
+pip install -r requirements.txt     # numpy, ambiance (atmósfera ISA), pytest
+python main.py                      # dimensiona el caso del guion V4 e imprime el informe
+python example/a320_guion_v4.py     # el mismo caso, paso a paso frente al PDF del guion
+python -m pytest tests              # regresión contra los guiones
 ```
 
-`ambiance` proporciona la atmósfera ISA (densidad y velocidad del sonido en crucero).
+Para dimensionar tu propio avión, copia `example/a320_guion_v4.py` en `cases/`
+y cambia sus entradas (ver [Añadir un caso](#añadir-un-caso)).
+[`example/README.md`](example/README.md) explica el ejemplo y sus diferencias
+con el guion.
 
 ## Uso
 
@@ -35,31 +40,33 @@ Los módulos se importan como módulos de primer nivel, así que hay que ejecuta
 desde este directorio:
 
 ```bash
-python main.py                    # caso por defecto: a380, cálculo refinado
-python main.py 737-800            # otro caso
-python main.py 737-800 --first-order   # método de primer orden (Tabla 3.1)
-python main.py a350-900 --edition 6    # fuerza la edición de Raymer (6 o 7)
-python main.py a380-v2 --no-descent    # sin segmento de descenso (--descent lo fuerza)
+python main.py                         # caso por defecto: guion-v4, cálculo refinado
+python main.py guion-v4 --first-order  # método de primer orden (Tabla 3.1)
+python main.py guion-v4 --edition 6    # fuerza la edición de Raymer (6 o 7)
+python main.py guion-v4 --descent      # añade el segmento de descenso (--no-descent lo quita)
+python main.py --help                  # lista los casos disponibles
 ```
 
-Casos disponibles: `707-320b`, `727-200`, `737-800`, `747-400`, `a300b4`,
-`a310-200`, `a310-300`, `a350-900`, `a380`, `a380-v2`.
+Los casos se descubren solos: cualquier `.py` con una función `case()` en
+`example/` (versionado) o en `cases/` (casos de trabajo locales, ignorados por
+git). El nombre en la línea de órdenes es la variable `NAME` del módulo, o el
+nombre del archivo con `-` en lugar de `_`.
 
-Salida (extracto de `python main.py 737-800`):
+Salida (extracto de `python main.py`):
 
 ```
-Case: refined   Raymer edition: 6   Reference: 737-800 (HGW)
+Case: refined   Raymer edition: 7   Reference: guion V4 (segment reference)
                               computed             actual     error
 
 Weights
 ----------------------------------------------------------------------
-  MTOW                          74,070 kg          79,015    -6.3 %
-  OEW                           38,627 kg          41,412    -6.7 %
+  MTOW                          71,936 kg          78,000    -7.8 %
+  OEW                           39,781 kg
   ...
 Wing
 ----------------------------------------------------------------------
-  Area S                         119.5 m2           124.6    -4.1 %
-  Span b                         33.55 m            34.32    -2.3 %
+  Area S                         119.9 m2           123.0    -2.5 %
+  Span b                         33.75 m            34.00    -0.7 %
   ...
 ```
 
@@ -71,8 +78,8 @@ Uso desde Python:
 ```python
 from main import run, report
 
-out = run("737-800", refined=True, descent=False)   # dict con weights, limits, wing, fuselage, tail...
-print(out["weights"].w0)             # MTOW [kg]
+out = run("guion-v4", refined=True)   # dict con weights, limits, wing, fuselage, tail...
+print(out["weights"].w0)              # MTOW [kg]
 report(out)
 ```
 
@@ -82,7 +89,8 @@ report(out)
 
 ```
 sizing/
-├── main.py            CLI: ejecuta un caso completo e imprime el informe
+├── main.py            CLI: descubre los casos, ejecuta uno e imprime el informe
+├── requirements.txt   Dependencias
 ├── constants.py       Constantes físicas y conversiones de unidades
 ├── data.py            Dataclasses de entrada: Mission, Aerodynamics, Design, Reference
 ├── results.py         Dataclass Result (salida de la iteración de pesos)
@@ -93,8 +101,10 @@ sizing/
 │   ├── wing.py        Geometría del ala trapezoidal
 │   ├── fuselage.py    Sección y longitud del fuselaje desde la cabina
 │   └── tail.py        Empenaje por coeficientes de volumen
-├── cases/             Un módulo por avión de referencia
-└── tests/             Regresión contra el guion (PDF Raymer V2)
+├── example/           Caso del guion V4 y recorrido paso a paso (versionado)
+├── cases/             Casos de trabajo locales (no versionado)
+├── docs/              Metodología (LaTeX) y guion V4
+└── tests/             Regresión contra los guiones V2 y V4
 ```
 
 Flujo de cálculo en `main.run()`:
@@ -166,6 +176,7 @@ Detalle de las funciones geométricas, constantes y claves de retorno en
 | `decks` | `[]` | Lista de `Deck` (distribución de cabina) |
 | `fuselage` | `{}` | Valores fijados: `diameter`, `nose`, `tailcone` [m] |
 | `tail_arm_fraction` | 0.50 | Brazo de cola / longitud del fuselaje |
+| `tail_arm_length` | `"cabin"` | Longitud que fija el brazo: `"cabin"` (disposición de cabina) o `"statistical"` (Tabla 6.3) |
 
 ### `Reference` — avión real (solo validación)
 
@@ -267,6 +278,8 @@ dimensionante. Con `diameter`, `nose` o `tailcone` en `kwargs` (o en
 ### Empenaje (`geometry/tail.py`)
 
 - Brazo de cola: `arm_fraction · Lf` (0.50–0.55 motores en ala, 0.45–0.50 motores traseros).
+  Lf es la longitud por cabina, o la estadística de la Tabla 6.3 si
+  `Design.tail_arm_length = "statistical"` (como hace el guion V4, sec. 9.2.1).
 - S_HT = c_HT·MAC·S / L_HT, S_VT = c_VT·b·S / L_VT, con c_HT = 1.00 y
   c_VT = 0.09 (Raymer Tabla 6.4, transporte a reacción) por defecto en `TailCoefficients`.
 - Mandos: alerones 5 % de S, timón de profundidad 30 % de S_HT, timón de dirección 30 % de S_VT.
@@ -277,13 +290,16 @@ dimensionante. Con `diameter`, `nose` o `tailcone` en `kwargs` (o en
 
 ## Añadir un caso
 
-1. Crea `cases/<avion>.py` con una función `case()` que devuelva
-   `(mission, aero, design, reference)`. Usa `cases/b_737_800.py` como plantilla.
-2. Define la cabina con `Deck` / `SeatingZone` en `design.decks`.
-3. Regístralo en el diccionario `CASES` de `main.py`.
+1. Copia `example/a320_guion_v4.py` en `cases/<avion>.py`.
+2. Cambia `NAME` (el nombre en la línea de órdenes) y las entradas de `case()`,
+   que devuelve `(mission, aero, design, reference)`. La cabina se define con
+   `Deck` / `SeatingZone` en `design.decks`.
+3. Borra la parte del recorrido (de `# --- worked example` hacia abajo).
+4. `python main.py <NAME>`. No hace falta registrarlo en ningún sitio.
 
-Convención en los casos existentes: los comentarios `(H)` marcan hipótesis
-propias, no datos publicados.
+Convención: los comentarios `(H)` marcan hipótesis propias, no datos
+publicados. Si el caso debe compartirse con todos, va en `example/` en lugar de
+`cases/`.
 
 ---
 
@@ -293,26 +309,29 @@ propias, no datos publicados.
 python -m pytest tests
 ```
 
-`tests/test_guion_v2.py` es una regresión contra
-`Dimensionamiento_preliminar_aeronave_Raymer_V2.pdf` (narrow-body de 150
-plazas, Raymer 6.ª ed.). Comprueba cada ecuación del guion con tolerancia
-relativa del 1 % (el PDF redondea a unas tres cifras significativas).
+Todos los tests de los guiones comprueban cada ecuación con tolerancia
+relativa del 1 % (los PDF redondean a unas tres cifras significativas).
 `tests/conftest.py` añade el directorio raíz al `sys.path`.
 
-`a380-v2` usa las entradas de `MTOW_A380_Raymer.pdf`. El PDF fija
-(L/D)max = 19.5, que no sale de su K_LD = 15.5 con AR = 7.5 (daría 17.3); con
-`ld_max=19.5` en el caso, esta orden reproduce su MTOW (≈ 539 700 kg):
+- `tests/test_guion_v4.py`: regresión contra
+  `docs/Dimensionamiento_preliminar_aeronave_Raymer_V4.pdf` (Raymer 7.ª ed.).
+  Usa el `case()` de `example/a320_guion_v4.py`, así que el ejemplo y los tests
+  no pueden separarse. Para las magnitudes del guion que dependen del W0
+  refinado se evalúa en su W0 (79 800 kg); `test_code_refined_w0` fija además
+  el W0 refinado del propio código (71 936 kg) para detectar cambios no
+  intencionados.
+- `tests/test_guion_v2.py`: regresión contra
+  `Dimensionamiento_preliminar_aeronave_Raymer_V2.pdf` (Raymer 6.ª ed.).
 
-```bash
-python main.py a380-v2 --first-order --edition 6 --no-descent
-```
-
-Estado actual: **28 correctos, 2 fallos conocidos**:
+Estado actual: **45 correctos, 3 fallos conocidos**, todos del V2:
 
 - `test_cabin_length`: el guion usa 3 lavabos para 150 plazas (uno cada 50); el
   código redondea por zona (12/50 → 1, 138/50 → 3) y obtiene 4, así que la
   cabina sale 0.95 m más larga.
 - `test_fuselage_length`: consecuencia del anterior (38.34 m frente a 37.5 m).
+- `test_refined_w0`: el código usa la W/S real a mitad de crucero para la L/D
+  de la polar y la (L/D)max de la polar en la espera; el guion V2 usa la W/S de
+  diseño y la espera de primer orden (66 900 kg frente a 72 000 kg).
 
 ---
 
@@ -324,7 +343,8 @@ Estado actual: **28 correctos, 2 fallos conocidos**:
   no modifican el diseño: W/S y T/W son entradas de `Design`.
 - `is_feasible` y `Design.table_6_1_metric` no se usan en el flujo principal.
 - Los módulos usan importaciones absolutas de primer nivel (`from data import …`),
-  por lo que hay que ejecutar desde este directorio o añadirlo al `PYTHONPATH`.
+  por lo que hay que ejecutar desde este directorio o añadirlo al `PYTHONPATH`
+  (`example/a320_guion_v4.py` se encarga de ello y funciona desde cualquier sitio).
 
 ## Referencias
 
@@ -332,4 +352,4 @@ Estado actual: **28 correctos, 2 fallos conocidos**:
   (Tablas 3.1, 3.2, 3.3, 5.3, 6.1, 6.3, 6.4; Fig. 8.2).
 - CS-25 (EASA): factor Vref, 25.807 (salidas de emergencia).
 - Documentos del curso en `../`: guion V2/DEF, cambios de Raymer v7 y
-  `MTOW_A380_Raymer.pdf` (referencia de `a380-v2`).
+  `MTOW_A380_Raymer.pdf`.

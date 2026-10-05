@@ -1,19 +1,36 @@
 import argparse
+import importlib.util
+from pathlib import Path
 
 import weight, constraints, aerodynamic
 from geometry import wing, fuselage, tail
-from cases import a_300b4, a_310_300, a_350_900, a_380, b_707_320b, b_727_200, b_737_800, b_747_400, a_310_200, a_380_v2, a_320_200
 from constants import G
 from geometry.tail import implied_coefficients
 
-CASES = {
-    "707-320b": b_707_320b.case, "727-200": b_727_200.case,
-    "737-800": b_737_800.case, "747-400": b_747_400.case,
-    "a300b4": a_300b4.case, "a310-300": a_310_300.case,
-    "a350-900": a_350_900.case, "a380": a_380.case,
-    "a310-200": a_310_200.case, "a380-v2": a_380_v2.case,
-    "a320-200": a_320_200.case,
-}
+ROOT = Path(__file__).resolve().parent
+# example/ is versioned; cases/ holds local working cases and may not exist.
+CASE_FOLDERS = ("example", "cases")
+
+def load_cases() -> dict:
+    """{name: case function} of every module with a case() in CASE_FOLDERS.
+
+    The name is the module's NAME, or its file name with '-' for '_'.
+    """
+    cases = {}
+    for folder in CASE_FOLDERS:
+        for path in sorted((ROOT / folder).glob("*.py")):
+            spec = importlib.util.spec_from_file_location(f"{folder}.{path.stem}", path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            if not hasattr(module, "case"):
+                continue
+            name = getattr(module, "NAME", path.stem.replace("_", "-"))
+            if name in cases:
+                raise ValueError(f"Duplicate case name '{name}' in {path}")
+            cases[name] = module.case
+    return cases
+
+CASES = load_cases()
 
 def run(case_name: str, refined: bool = True, edition: int = None,
         descent: bool = None) -> dict:
@@ -33,7 +50,8 @@ def run(case_name: str, refined: bool = True, edition: int = None,
     w = wing.wing_geometry(result.w0, aero, design, max_span=design.max_span)
     f = fuselage.fuselage_geometry(design.decks, w0=result.w0,
                                   edition=design.raymer_edition, **design.fuselage)
-    t = tail.tail_geometry(w, f["length"],
+    arm_length = f["statistical_length"] if design.tail_arm_length == "statistical" else f["length"]
+    t = tail.tail_geometry(w, arm_length,
                            tail.TailCoefficients(arm_fraction=design.tail_arm_fraction))
     return {"weights": result, "limits": limits, "aero": aero_summary,
             "design": design,
@@ -130,7 +148,7 @@ def report(out: dict) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("case", choices=CASES, default="a380", nargs="?")
+    parser.add_argument("case", choices=CASES, default="guion-v4", nargs="?")
     parser.add_argument("--first-order", action="store_true")
     parser.add_argument("--edition", type=int, choices=(6, 7),
                         help="Raymer edition for the statistical tables (default: case value)")
