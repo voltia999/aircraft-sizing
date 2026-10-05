@@ -51,8 +51,7 @@ def run(case_name: str, refined: bool = True, edition: int = None,
     f = fuselage.fuselage_geometry(design.decks, w0=result.w0,
                                   edition=design.raymer_edition, **design.fuselage)
     arm_length = f["statistical_length"] if design.tail_arm_length == "statistical" else f["length"]
-    t = tail.tail_geometry(w, arm_length,
-                           tail.TailCoefficients(arm_fraction=design.tail_arm_fraction))
+    t = tail.tail_geometry(w, arm_length, design.tail, design.controls)
     return {"weights": result, "limits": limits, "aero": aero_summary,
             "design": design,
             "wing": w, "fuselage": f, "tail": t, "reference": reference}

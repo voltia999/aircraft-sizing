@@ -62,9 +62,23 @@ alar en **kg/m²**.
 | `raymer_edition` | 7 | Edición de las tablas 3.1, 6.1 y 6.3 (6 o 7) |
 | `max_span` | `None` | Límite de envergadura del aeropuerto (m); **no se aplica todavía** |
 | `decks` | `[]` | Lista de `Deck` (distribución de cabina, ver [`geometry/`](../geometry/README.md)) |
-| `fuselage` | `{}` | Valores fijados: `diameter`, `nose`, `tailcone` [m] |
-| `tail_arm_fraction` | 0.50 | Brazo de cola / longitud del fuselaje |
+| `fuselage` | `{}` | Opciones de `fuselage_geometry`: valores fijados (`diameter`, `nose`, `tailcone` [m]), parámetros de la sección y ángulos de morro y cola. Una clave desconocida da error. Lista completa en [`geometry/`](../geometry/README.md#fuselage_geometrydecks-w0none-kwargs---dict) |
+| `tail` | `TailCoefficients()` | c_HT = 1.00, c_VT = 0.09 (Tabla 6.4) y brazo / Lf = 0.50 |
+| `controls` | `ControlSurfaceRatios()` | Cuerdas relativas de alerones (0.23, tramo 0.5–0.9), timón de profundidad (0.25) y de dirección (0.32) |
 | `tail_arm_length` | `"cabin"` | Longitud que fija el brazo: `"cabin"` (disposición de cabina) o `"statistical"` (Tabla 6.3) |
+
+Los valores por defecto de `tail`, `controls` y de los estándares de cabina de
+`Deck` son los de Raymer para transporte a reacción. Cámbialos **en el caso**,
+nunca en los módulos: así afectan solo a ese avión.
+
+```python
+from geometry.tail import TailCoefficients
+
+design = Design(
+    ...,
+    tail=TailCoefficients(c_ht=0.65, c_vt=0.07, arm_fraction=0.50),  # A380, fly-by-wire
+)
+```
 
 ### `Reference` — avión real (solo validación)
 

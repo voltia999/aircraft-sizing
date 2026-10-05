@@ -21,6 +21,7 @@ from core.data import Mission, Aerodynamics, Design, Reference
 from methods import aerodynamic, constraints, weight
 from geometry import fuselage, tail, wing
 from geometry.fuselage import Deck, SeatingZone
+from geometry.tail import TailCoefficients, ControlSurfaceRatios
 
 NAME = "guion-v4"
 
@@ -69,7 +70,15 @@ def case() -> tuple:
         fuselage={"diameter": 3.95,   # 9.1: LD3-45 hold
                   "nose": 4.0,        # 9.2, Table 5
                   "tailcone": 5.0},
-        tail_arm_fraction=0.50,       # 10.1: L_HT = L_VT ~ 0.5 Lf
+        tail=TailCoefficients(
+            c_ht=1.00,                # 10.2: Raymer Table 6.4, jet transport
+            c_vt=0.09,                # 10.3: Raymer Table 6.4
+            arm_fraction=0.50,        # 10.1: L_HT = L_VT ~ 0.5 Lf, wing engines
+        ),
+        controls=ControlSurfaceRatios(
+            elevator_chord=0.25,      # 10.4, Table 6: 25 % of S_HT
+            rudder_chord=0.32,        # 10.4, Table 6: 32 % of S_VT
+        ),                            # ailerons: Raymer Fig. 6.3 (guion: 5 % of S)
         tail_arm_length="statistical",  # 9.2.1: Lf from Table 6.3 for the tail
     )
 
@@ -185,8 +194,7 @@ def main() -> None:
           "\n  the guion uses 3 for the 150 seats.")
 
     section("10  Empennage (arm from the statistical length)")
-    t = tail.tail_geometry(w2, f["statistical_length"],
-                           tail.TailCoefficients(arm_fraction=design.tail_arm_fraction))
+    t = tail.tail_geometry(w2, f["statistical_length"], design.tail, design.controls)
     row("Tail arm L_HT = L_VT", t["arm"], 20.07, "m", ".2f")
     row("S_HT (39)", t["s_ht"], 27.9, "m2", ".1f")
     row("S_VT (41)", t["s_vt"], 21.2, "m2", ".1f")

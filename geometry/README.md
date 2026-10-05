@@ -82,6 +82,13 @@ Propiedades: `n_rows = ⌈n_seats / seats_abreast⌉` y `length = n_rows · seat
 | `pax_per_lavatory` | 50 | Pasajeros por lavabo (por defecto) |
 | `cabin_height` | 2.30 m | Altura libre de cabina |
 | `floor_thickness` | 0.25 m | Espesor del suelo |
+| `aisle_width` | 0.51 m | Ancho por pasillo |
+| `clearance_per_seat` | 0.05 m | Reposabrazos y holgura lateral por asiento |
+| `lavatory_length` | 0.95 m | Longitud de un lavabo |
+| `galley_length` | 0.90 m | Longitud de un módulo de galley |
+| `exit_pair_length` | 1.10 m | Vestíbulo por par de puertas |
+| `pax_per_exit_pair` | 110 | Pasajeros por par de salidas (tipo A, CS 25.807) |
+| `staircase_length` | 1.50 m | Longitud por escalera |
 
 Propiedades: `n_seats` (suma de las zonas); `seats_abreast` y `seat_width`
 (máximo de las zonas, porque la zona más ancha fija el ancho de la cabina).
@@ -97,7 +104,15 @@ main = Deck("main", aisles=1, zones=[
 ])
 ```
 
+Los estándares de cabina (pasillo, lavabo, galley, salidas, escaleras) son
+campos de `Deck`: se cambian por cubierta desde el caso, por ejemplo
+`Deck(..., lavatory_length=1.20, pax_per_exit_pair=55)` para lavabos de largo
+radio y salidas tipo C.
+
 ### Constantes
+
+Valores por defecto de los campos de `Deck`, y alturas de contenedor para la
+opción `hold`:
 
 | Constante | Valor | Significado |
 |---|---|---|
@@ -163,14 +178,18 @@ Ensambla todo el fuselaje:
 3. Longitud = cabina de la cubierta dimensionante + morro + cono de cola.
 4. Si se pasa `w0`, añade `statistical_length` como comprobación.
 
-`kwargs` opcionales (normalmente vienen de `Design.fuselage`):
+`kwargs` opcionales (normalmente vienen de `Design.fuselage`). Una clave que no
+esté en esta tabla lanza `TypeError`, para que una errata no se ignore en silencio:
 
-| Clave | Efecto |
-|---|---|
-| `diameter` | Fija la sección circular [m] |
-| `nose`, `tailcone` | Fija sus longitudes [m] |
-| `structure_per_side`, `keel`, `crown`, `hold` | Parámetros de la sección |
-| `edition` | Edición de la Tabla 6.3 (defecto 7) |
+| Clave | Defecto | Efecto |
+|---|---|---|
+| `diameter` | — | Fija la sección circular [m] |
+| `nose`, `tailcone` | — | Fija sus longitudes [m] |
+| `structure_per_side`, `keel`, `crown` | 0.10, 0.20, 0.35 m | Parámetros de la sección |
+| `hold` | LD3 + 0.10 m | Altura de bodega [m] (`hold_height(LD3_45_HEIGHT)` para fuselaje estrecho) |
+| `radome_height`, `nose_upper_angle`, `nose_lower_angle` | 1.00 m, 20°, 15° | Contorno del morro |
+| `tailcone_end_height`, `tailcone_upper_angle`, `tailcone_lower_angle` | 0.80 m, 11°, 15° | Contorno del cono de cola |
+| `edition` | 7 | Edición de la Tabla 6.3 |
 
 Devuelve:
 
@@ -234,7 +253,9 @@ relajada: el A380 trabaja con c_HT ≈ 0.6–0.7.
 | `implied_coefficients(s_ht, s_vt, mac, span, wing_area, arm)` | Método inverso: `{"c_ht", "c_vt"}` de un avión real |
 | `tail_geometry(wing, fuselage_length, coeffs=None)` | Ensamblado completo |
 
-`main.run()` pasa como `fuselage_length` la longitud por cabina o, si
+`main.run()` usa `Design.tail` y `Design.controls`, así que los coeficientes y
+las proporciones de mandos se cambian desde el caso (por ejemplo c_HT ≈ 0.65
+para un A380). Como `fuselage_length` pasa la longitud por cabina o, si
 `Design.tail_arm_length = "statistical"`, la estadística de la Tabla 6.3
 (`statistical_length`), como hace el guion V4 (sec. 9.2.1).
 

@@ -13,6 +13,7 @@ importan los módulos igual que `main.py`.
 | `test_guion_v4.py` | `docs/Dimensionamiento_preliminar_aeronave_Raymer_V4.pdf` (Raymer 7.ª ed.), ecuación a ecuación |
 | `test_guion_v2.py` | `Dimensionamiento_preliminar_aeronave_Raymer_V2.pdf` (Raymer 6.ª ed.) |
 | `test_controls_loiter.py` | Espera con la polar, superficies de mando (Fig. 6.3, Tabla 6.5) y rango de Oswald, calculados a mano |
+| `test_case_options.py` | Que las opciones que fija un caso (`Design.tail`, `Design.controls`, estándares de cabina de `Deck`, ángulos de morro y cola) llegan al resultado, y que una opción de fuselaje mal escrita da error |
 
 Los tests de los guiones usan una tolerancia relativa del 1 %, porque los PDF
 redondean a unas tres cifras significativas.
@@ -30,7 +31,7 @@ propósito, actualiza ese valor.
 
 ## Fallos conocidos
 
-Estado actual: **45 correctos, 3 fallos conocidos**, todos del V2:
+Estado actual: **53 correctos, 3 fallos conocidos**, todos del V2:
 
 - `test_cabin_length`: el guion usa 3 lavabos para 150 plazas (uno cada 50); el
   código redondea por zona (12/50 → 1, 138/50 → 3) y obtiene 4, así que la

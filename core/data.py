@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from core.constants import NM, KT, HOUR, G
+from geometry.tail import TailCoefficients, ControlSurfaceRatios
 
 
 @dataclass
@@ -53,8 +54,9 @@ class Design:
     raymer_edition: int = 7            # 6 or 7: statistical tables 3.1, 6.1, 6.3
     max_span: float = None             # m, airport box limit
     decks: list = field(default_factory=list)
-    fuselage: dict = field(default_factory=dict)   # fixed choices: diameter, nose, tailcone [m]
-    tail_arm_fraction: float = 0.50    # tail arm / fuselage length
+    fuselage: dict = field(default_factory=dict)   # fuselage_geometry kwargs: diameter, nose, tailcone...
+    tail: TailCoefficients = field(default_factory=TailCoefficients)            # c_HT, c_VT, arm / Lf
+    controls: ControlSurfaceRatios = field(default_factory=ControlSurfaceRatios)  # control surface chords
     tail_arm_length: str = "cabin"     # Lf for the tail arm: "cabin" layout or "statistical" (Table 6.3)
 
 

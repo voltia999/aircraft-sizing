@@ -132,7 +132,7 @@ def test_tail(inputs):
     _, aero, design = inputs
     w = wing.wing_geometry(GUION_W0_REFINED, aero, design)
     lf = fuselage.statistical_length(GUION_W0_REFINED, design.raymer_edition)
-    t = tail.tail_geometry(w, lf, tail.TailCoefficients(arm_fraction=design.tail_arm_fraction))
+    t = tail.tail_geometry(w, lf, design.tail, design.controls)
     assert t["arm"] == pytest.approx(20.07, rel=REL)
     assert t["s_ht"] == pytest.approx(27.9, rel=REL)
     assert t["s_vt"] == pytest.approx(21.2, rel=REL)

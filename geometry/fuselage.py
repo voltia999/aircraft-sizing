@@ -3,6 +3,7 @@ from math import ceil
 import numpy as np
 
 
+# Cabin standards: defaults of the Deck fields, override them per deck
 AISLE_WIDTH = 0.51          # m, per aisle
 CLEARANCE_PER_SEAT = 0.05   # m, armrests and side clearance
 LD3_HEIGHT = 1.63           # m, IATA standard container
@@ -45,6 +46,13 @@ class Deck:
     pax_per_lavatory: int = 50
     cabin_height: float = 2.30
     floor_thickness: float = 0.25
+    aisle_width: float = AISLE_WIDTH
+    clearance_per_seat: float = CLEARANCE_PER_SEAT
+    lavatory_length: float = LAVATORY_LENGTH
+    galley_length: float = GALLEY_MODULE
+    exit_pair_length: float = EXIT_PAIR_LENGTH
+    pax_per_exit_pair: int = PAX_PER_TYPE_A_PAIR
+    staircase_length: float = STAIRCASE_LENGTH
  
     @property
     def n_seats(self) -> int:
@@ -64,7 +72,7 @@ class Deck:
 def cabin_width(deck: Deck) -> float:
     """Inner width required by seats, aisles and clearances [m]."""
     n = deck.seats_abreast
-    return n * deck.seat_width + deck.aisles * AISLE_WIDTH + n * CLEARANCE_PER_SEAT
+    return n * deck.seat_width + deck.aisles * deck.aisle_width + n * deck.clearance_per_seat
  
  
 def external_width(deck: Deck, structure_per_side: float = 0.10) -> float:
@@ -102,10 +110,10 @@ def deck_length(deck: Deck) -> dict:
     """Length breakdown of one deck [m]."""
     seating = sum(z.length for z in deck.zones)
     lavatories = sum(ceil(z.n_seats / (z.pax_per_lavatory or deck.pax_per_lavatory))
-                     for z in deck.zones) * LAVATORY_LENGTH
-    galleys = ceil(deck.n_seats / deck.pax_per_galley_module) * GALLEY_MODULE
-    exits = required_exit_pairs(deck.n_seats) * EXIT_PAIR_LENGTH
-    stairs = deck.n_staircases * STAIRCASE_LENGTH
+                     for z in deck.zones) * deck.lavatory_length
+    galleys = ceil(deck.n_seats / deck.pax_per_galley_module) * deck.galley_length
+    exits = required_exit_pairs(deck.n_seats, deck.pax_per_exit_pair) * deck.exit_pair_length
+    stairs = deck.n_staircases * deck.staircase_length
     return {
         "seating": seating, "galleys": galleys, "lavatories": lavatories,
         "exits": exits, "stairs": stairs,
@@ -149,6 +157,18 @@ def statistical_length(w0: float, edition: int = 7) -> float:
     return t["a"] * w0 ** t["C1"]
 
 # --- assembly -------------------------------------------------------------
+# fuselage_geometry option -> parameter of nose_length / tailcone_length
+NOSE_OPTIONS = {"radome_height": "radome_height",
+                "nose_upper_angle": "upper_angle", "nose_lower_angle": "lower_angle"}
+TAILCONE_OPTIONS = {"tailcone_end_height": "end_height",
+                    "tailcone_upper_angle": "upper_angle", "tailcone_lower_angle": "lower_angle"}
+FUSELAGE_OPTIONS = ({"diameter", "nose", "tailcone", "structure_per_side", "keel",
+                     "crown", "hold", "edition"} | set(NOSE_OPTIONS) | set(TAILCONE_OPTIONS))
+
+def _pick(kwargs: dict, options: dict) -> dict:
+    """The kwargs present in options, renamed to the function's parameters."""
+    return {param: kwargs[key] for key, param in options.items() if key in kwargs}
+
 def fuselage_geometry(decks: list, w0: float = None, **kwargs) -> dict:
     """Full fuselage sizing from the cabin layout.
  
@@ -157,7 +177,15 @@ def fuselage_geometry(decks: list, w0: float = None, **kwargs) -> dict:
 
     Optional kwargs fix project decisions instead of computing them:
     'diameter' (circular section), 'nose' and 'tailcone' lengths [m].
+    Other kwargs tune the computed section ('structure_per_side', 'keel',
+    'crown', 'hold') and contours ('radome_height', 'nose_upper_angle',
+    'nose_lower_angle', 'tailcone_end_height', 'tailcone_upper_angle',
+    'tailcone_lower_angle'; angles in degrees).
     """
+    unknown = set(kwargs) - FUSELAGE_OPTIONS
+    if unknown:
+        raise TypeError(f"Unknown fuselage options {sorted(unknown)}; "
+                        f"valid: {sorted(FUSELAGE_OPTIONS)}")
     main = max(decks, key=lambda d: deck_length(d)["total"])
     if kwargs.get("diameter"):
         width = height = d_eq = kwargs["diameter"]
@@ -167,8 +195,8 @@ def fuselage_geometry(decks: list, w0: float = None, **kwargs) -> dict:
                                 kwargs.get("crown", 0.35), kwargs.get("hold"))
         d_eq = equivalent_diameter(width, height)
     cabin = deck_length(main)["total"]
-    nose = kwargs.get("nose") or nose_length(height)
-    tail = kwargs.get("tailcone") or tailcone_length(height)
+    nose = kwargs.get("nose") or nose_length(height, **_pick(kwargs, NOSE_OPTIONS))
+    tail = kwargs.get("tailcone") or tailcone_length(height, **_pick(kwargs, TAILCONE_OPTIONS))
     length = cabin + nose + tail
     result = {
         "cabin_widths": {d.name: cabin_width(d) for d in decks},
