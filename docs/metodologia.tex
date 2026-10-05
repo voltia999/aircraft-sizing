@@ -130,12 +130,14 @@ Con un \SI{6}{\percent} para reservas y combustible atrapado
 Correlación estadística de la tabla~3.1 para transporte a reacción, en
 unidades métricas:
 \begin{equation}
-  \frac{W_e}{\WO} = a\,\WO^{\,C}\,K_{vs},
+  \frac{W_e}{\WO} = a\,\WO^{\,C}\,K_{vs}\,K_c,
 \end{equation}
 con $a=\num{0.97}$, $C=\num{-0.06}$ en la 6.ª edición~\cite{raymer6} y
 $a=\num{1.202}$, $C=\num{-0.072}$ en la 7.ª~\cite{raymer7}. $K_{vs}=1{,}04$
-para ala de flecha variable y 1 para ala fija. Con ambas fracciones se itera
-la ecuación~\eqref{eq:w0}.
+para ala de flecha variable y 1 para ala fija. $K_c=0{,}95$ aproxima una
+estructura de materiales compuestos y $K_c=1$ una metálica
+\cite[cap.~3]{raymer6}; el mismo factor se aplica a la fracción refinada de la
+tabla~6.1. Con ambas fracciones se itera la ecuación~\eqref{eq:w0}.
 
 %----------------------------------------------------------------------------
 \section{Initial sizing}
@@ -221,11 +223,13 @@ la carga alar y el Mach máximo. En la 6.ª edición~\cite{raymer6}:
 \begin{equation}
   \frac{W_e}{\WO} = \left[a + b\,\WO^{\,C_1} A^{C_2}
     \left(\frac{T}{\WO}\right)^{C_3}\left(\frac{\WO}{S}\right)^{C_4}
-    M_\text{máx}^{\,C_5}\right] K_{vs},
+    M_\text{máx}^{\,C_5}\right] K_{vs}\,K_c,
 \end{equation}
 con $a=\num{0.32}$, $b=\num{0.66}$, $C_1=\num{-0.13}$, $C_2=\num{0.30}$,
-$C_3=\num{0.06}$, $C_4=\num{-0.05}$, $C_5=\num{0.05}$ (métrico). La 7.ª
-edición~\cite{raymer7} elimina el término aditivo:
+$C_3=\num{0.06}$, $C_4=\num{-0.05}$, $C_5=\num{0.05}$. La tabla está en
+unidades imperiales ($\WO$ en \si{lb}, $\WO/S$ en \si{lb/ft^2}); con la
+conversión de más abajo, en \si{kg} y \si{kg/m^2} queda $b_\text{SI} =
+\num{0.645}$. La 7.ª edición~\cite{raymer7} elimina el término aditivo:
 \begin{equation}
   \frac{W_e}{\WO} = a\,\WO^{\,C_1} A^{C_2}
     \left(\frac{T}{\WO}\right)^{C_3}\left(\frac{\WO}{S}\right)^{C_4}
@@ -234,12 +238,14 @@ edición~\cite{raymer7} elimina el término aditivo:
 con $a=\num{0.869}$, $C_1=\num{-0.037}$, $C_2=\num{0.398}$,
 $C_3=\num{0.100}$, $C_4=\num{-0.161}$, $C_5=\num{0.050}$. Estos coeficientes
 solo se dan en unidades imperiales ($\WO$ en \si{lb}, $\WO/S$ en
-\si{lb/ft^2}); para usar \si{kg} y \si{kg/m^2} se convierte la constante:
+\si{lb/ft^2}); en las dos ediciones, para usar \si{kg} y \si{kg/m^2} se
+convierte la constante que multiplica a $\WO^{\,C_1}(\WO/S)^{C_4}$ ($b$ en la
+6.ª, $a$ en la 7.ª):
 \begin{equation}
-  a_\text{SI} = a_\text{fps}\,k_m^{\,C_1}\left(\frac{k_m}{k_S}\right)^{C_4},
+  k_\text{SI} = k_\text{fps}\,k_m^{\,C_1}\left(\frac{k_m}{k_S}\right)^{C_4},
   \qquad k_m = \SI{2.20462}{lb/kg}, \quad k_S = \SI{10.7639}{ft^2/m^2},
 \end{equation}
-lo que da $a_\text{SI} = \num{1.089}$.
+lo que da $a_\text{SI} = \num{1.089}$ en la 7.ª edición.
 
 \subsection{Fracciones de misión refinadas}
 
@@ -330,6 +336,19 @@ fuselaje: \SIrange{50}{55}{\percent} con motores en el ala y
 Por defecto la longitud es la obtenida por disposición de cabina; opcionalmente
 puede tomarse la estadística de la tabla~6.3, $L_f = a\,W_0^{C_1}$, evaluada
 con el $W_0$ de diseño.
+
+Los coeficientes de la tabla~6.4 corresponden a una cola convencional. Raymer
+\cite[sec.~6.4]{raymer6} permite reducirlos según la configuración: una cola en
+T reduce un \SI{5}{\percent} ambos coeficientes (efecto placa del
+estabilizador horizontal sobre el vertical y aire limpio en el horizontal),
+una cola en H reduce un \SI{5}{\percent} el horizontal, un estabilizador
+horizontal todo móvil lo reduce entre un 10 y un \SI{15}{\percent} (el código
+toma \SI{12.5}{\percent}) y un sistema de mandos de vuelo activo permite
+reducir ambas superficies en torno a un \SI{10}{\percent}. Las reducciones se
+aplican multiplicando. Una cola en V se dimensiona como una convencional y se
+sustituye por dos superficies con la misma área total, $S_\text{HT} +
+S_\text{VT}$, y un diedro $\Gamma = \arctan\sqrt{S_\text{VT}/S_\text{HT}}$,
+normalmente próximo a \SI{45}{\degree}.
 
 Las superficies de mando mantienen una cuerda relativa constante
 \cite[sec.~6.6]{raymer6}. Los timones ocupan toda la envergadura de la cola, así

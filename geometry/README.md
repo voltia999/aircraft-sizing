@@ -238,8 +238,21 @@ constante (Raymer 6.6), así que en los timones la fracción de área es la de c
 ### `TailCoefficients`
 
 Dataclass con `c_ht`, `c_vt` y `arm_fraction`, que por defecto toman los valores
-de Raymer. Se pueden bajar en aviones grandes fly-by-wire con estabilidad
-relajada: el A380 trabaja con c_HT ≈ 0.6–0.7.
+de Raymer para una cola convencional, y tres opciones que aplican las
+reducciones de la sección 6.4 (multiplicando):
+
+| Campo | Valores | Efecto |
+|---|---|---|
+| `configuration` | `"conventional"` | Ninguno |
+| | `"t-tail"` | c_HT y c_VT × 0.95 (`T_TAIL_FACTOR`) |
+| | `"h-tail"` | c_HT × 0.95 (`H_TAIL_FACTOR`) |
+| | `"v-tail"` | Se dimensiona como convencional y se añade `v_tail`: área total S_HT + S_VT y diedro atan√(S_VT/S_HT) |
+| `all_moving` | `True` | c_HT × 0.875 (`ALL_MOVING_FACTOR`, Raymer da 10–15 %) |
+| `fly_by_wire` | `True` | c_HT y c_VT × 0.90 (`FLY_BY_WIRE_FACTOR`) |
+
+Una configuración desconocida da `ValueError`. Para un canard de control
+Raymer da c_HT ≈ 0.1 con un brazo del 30–50 % de Lf: se fija a mano con
+`c_ht` y `arm_fraction`.
 
 ### Funciones
 
@@ -251,6 +264,8 @@ relajada: el A380 trabaja con c_HT ≈ 0.6–0.7.
 | `span_area_fraction(taper, eta_in, eta_out)` | Fracción del área del ala trapezoidal entre dos estaciones de semienvergadura |
 | `control_surfaces(wing, s_ht, s_vt, ratios=None)` | Alerones = c_a/c · fracción(0.5–0.9) · S; timones = c/c · S_cola |
 | `implied_coefficients(s_ht, s_vt, mac, span, wing_area, arm)` | Método inverso: `{"c_ht", "c_vt"}` de un avión real |
+| `effective_coefficients(coeffs)` | (c_HT, c_VT) tras las reducciones de configuración |
+| `v_tail(s_ht, s_vt)` | `{"area", "dihedral"}` de la cola en V equivalente |
 | `tail_geometry(wing, fuselage_length, coeffs=None)` | Ensamblado completo |
 
 `main.run()` usa `Design.tail` y `Design.controls`, así que los coeficientes y
@@ -264,7 +279,8 @@ porque los momentos de guiñada que compensa (por ejemplo, con un motor parado)
 escalan con b.
 
 `tail_geometry` recibe el `dict` de `wing_geometry` (usa `S`, `b`, `MAC`, `c_root` y `c_tip`) y
-devuelve `{"arm", "s_ht", "s_vt", "controls"}`.
+devuelve `{"arm", "c_ht", "c_vt", "s_ht", "s_vt", "controls"}` (con los
+coeficientes ya reducidos) y, si la cola es en V, `"v_tail"`.
 
 Ejemplo (guion V2: ala anterior, Lf = 37.5 m, brazo 0.40·Lf = 15 m):
 S_HT = 32.0 m², S_VT = 24.3 m². El guion toma alerones del 5 % de S y timones del

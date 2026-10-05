@@ -59,11 +59,12 @@ alar en **kg/m²**.
 | `mlw_fraction` | 0.85 | MLW / MTOW |
 | `vref_factor` | 1.23 | Vref / Vstall (CS-25) |
 | `k_vs` | 1.0 | Factor de flecha variable (1.04 si la hay) |
+| `k_composite` | 1.0 | Factor de materiales compuestos sobre We/W0 (0.95 para estructura de compuesto, Raymer cap. 3) |
 | `raymer_edition` | 7 | Edición de las tablas 3.1, 6.1 y 6.3 (6 o 7) |
 | `max_span` | `None` | Límite de envergadura del aeropuerto (m); **no se aplica todavía** |
 | `decks` | `[]` | Lista de `Deck` (distribución de cabina, ver [`geometry/`](../geometry/README.md)) |
 | `fuselage` | `{}` | Opciones de `fuselage_geometry`: valores fijados (`diameter`, `nose`, `tailcone` [m]), parámetros de la sección y ángulos de morro y cola. Una clave desconocida da error. Lista completa en [`geometry/`](../geometry/README.md#fuselage_geometrydecks-w0none-kwargs---dict) |
-| `tail` | `TailCoefficients()` | c_HT = 1.00, c_VT = 0.09 (Tabla 6.4) y brazo / Lf = 0.50 |
+| `tail` | `TailCoefficients()` | c_HT = 1.00, c_VT = 0.09 (Tabla 6.4), brazo / Lf = 0.50, y configuración (`"conventional"`, `"t-tail"`, `"h-tail"`, `"v-tail"`), `all_moving` y `fly_by_wire` con las reducciones de Raymer 6.4 |
 | `controls` | `ControlSurfaceRatios()` | Cuerdas relativas de alerones (0.23, tramo 0.5–0.9), timón de profundidad (0.25) y de dirección (0.32) |
 | `tail_arm_length` | `"cabin"` | Longitud que fija el brazo: `"cabin"` (disposición de cabina) o `"statistical"` (Tabla 6.3) |
 
@@ -111,4 +112,4 @@ y no se compara en el informe. Las propiedades `wing_loading` y
 | `NM` | 1852 m | Millas náuticas → m |
 | `KT` | 0.514444 m/s | Nudos → m/s |
 | `HOUR` | 3600 s | Consumos en h⁻¹ → s⁻¹ |
-| `LB`, `FT2` | 2.20462, 10.7639 | kg → lb y m² → ft² (Tabla 6.1 de la 7.ª ed.) |
+| `LB`, `FT2` | 2.20462, 10.7639 | kg → lb y m² → ft² (Tabla 6.1, que viene en unidades imperiales) |

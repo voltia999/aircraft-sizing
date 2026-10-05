@@ -50,6 +50,7 @@ class Design:
     mlw_fraction: float = 0.85         # MLW / MTOW
     vref_factor: float = 1.23          # CS-25
     k_vs: float = 1.0                  # 1.04 for variable sweep
+    k_composite: float = 1.0           # 0.95 for a composite structure (Raymer ch. 3)
     table_6_1_metric: bool = True
     raymer_edition: int = 7            # 6 or 7: statistical tables 3.1, 6.1, 6.3
     max_span: float = None             # m, airport box limit

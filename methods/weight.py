@@ -9,17 +9,22 @@ from core.constants import LB, FT2
 TABLE_3_1 = {6: {"a": 0.97, "C": -0.06},
              7: {"a": 1.202, "C": -0.072}}
 
-# Raymer Table 6.1, jet transport (metric: W0 in kg, W0/S in kg/m2), by edition.
+# Raymer Table 6.1, jet transport, by edition. Both editions give it in fps units
+# only (W0 in lb, W0/S in lb/ft2); the code uses kg and kg/m2.
 # 6th: We/W0 = a + b * W0^C1 * A^C2 * (T/W)^C3 * (W0/S)^C4 * Mmax^C5
 # 7th: We/W0 = a * W0^C1 * A^C2 * (T/W)^C3 * (W0/S)^C4 * Mmax^C5 (no additive term)
+_T61_V6_FPS = {"a": 0.32, "b": 0.66, "C1": -0.13, "C2": 0.30,
+               "C3": 0.06, "C4": -0.05, "C5": 0.05}
 _T61_V7_FPS = {"a": 0.869, "C1": -0.037, "C2": 0.398,
                "C3": 0.100, "C4": -0.161, "C5": 0.050}
+
+def _to_metric(coefficient: float, t: dict) -> float:
+    """Constant multiplying W0^C1 (W0/S)^C4, from fps to kg: k * LB^C1 * (LB/FT2)^C4."""
+    return coefficient * LB ** t["C1"] * (LB / FT2) ** t["C4"]
+
 TABLE_6_1 = {
-    6: {"a": 0.32, "b": 0.66, "C1": -0.13, "C2": 0.30,
-        "C3": 0.06, "C4": -0.05, "C5": 0.05},
-    # The 7th edition only gives fps: a_mks = a_fps * LB^C1 * (LB/FT2)^C4
-    7: {**_T61_V7_FPS, "b": None,
-        "a": _T61_V7_FPS["a"] * LB ** _T61_V7_FPS["C1"] * (LB / FT2) ** _T61_V7_FPS["C4"]},
+    6: {**_T61_V6_FPS, "b": _to_metric(_T61_V6_FPS["b"], _T61_V6_FPS)},
+    7: {**_T61_V7_FPS, "b": None, "a": _to_metric(_T61_V7_FPS["a"], _T61_V7_FPS)},
 }
 
 def w_payload(mission: Mission) -> float:
@@ -88,10 +93,11 @@ def F_fuel(mission: Mission, aero: Aerodynamics, refined: bool = False,
             * mission.F_landing)
     return mission.F_reserve * (1 - w_x)
 
-def F_empty(w0: float, k_vs: float = 1.0, edition: int = 7) -> float:
-    """Raymer Table 3.1, jet transport (metric)."""
+def F_empty(w0: float, k_vs: float = 1.0, edition: int = 7,
+            k_composite: float = 1.0) -> float:
+    """Raymer Table 3.1, jet transport (metric); k_composite = 0.95 for composites."""
     t = TABLE_3_1[edition]
-    return t["a"] * w0 ** t["C"] * k_vs
+    return t["a"] * w0 ** t["C"] * k_vs * k_composite
 
 def F_empty_refined(w0: float, aero: Aerodynamics, design: Design) -> float:
     """Raymer Table 6.1, jet transport (metric)."""
@@ -100,9 +106,10 @@ def F_empty_refined(w0: float, aero: Aerodynamics, design: Design) -> float:
                * design.thrust_to_weight ** t["C3"]
                * design.wing_loading ** t["C4"]
                * design.max_mach ** t["C5"])
+    factor = design.k_vs * design.k_composite
     if t["b"] is None:
-        return t["a"] * product * design.k_vs
-    return (t["a"] + t["b"] * product) * design.k_vs
+        return t["a"] * product * factor
+    return (t["a"] + t["b"] * product) * factor
 
 def resolve(mission: Mission, aero: Aerodynamics, design: Design = None,
             refined: bool = False, w0_initial: float = 5e5,
@@ -115,10 +122,13 @@ def resolve(mission: Mission, aero: Aerodynamics, design: Design = None,
     if refined and design is None:
         raise ValueError("El calculo refinado necesita un Design")
     k_vs = design.k_vs if design else 1.0
+    k_composite = design.k_composite if design else 1.0
     edition = design.raymer_edition if design else 7
 
     def empty_fraction(w: float) -> float:
-        return F_empty_refined(w, aero, design) if refined else F_empty(w, k_vs, edition)
+        if refined:
+            return F_empty_refined(w, aero, design)
+        return F_empty(w, k_vs, edition, k_composite)
 
     w0, hist = w0_initial, []
     wf_w0 = F_fuel(mission, aero, refined, design)

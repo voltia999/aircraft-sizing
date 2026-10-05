@@ -48,12 +48,15 @@ de `geometry`.
 - **Combustible**: `Wf/W0 = F_reserve · (1 − ∏ fracciones)`; `F_descent` solo
   entra si `mission.descent` es `True`.
 - **Fracción en vacío**:
-  - Primer orden, `F_empty` (Tabla 3.1): `We/W0 = a·W0^C·Kvs`.
+  - Primer orden, `F_empty` (Tabla 3.1): `We/W0 = a·W0^C·Kvs·Kc`.
   - Refinado, `F_empty_refined` (Tabla 6.1):
-    - 6.ª ed.: `We/W0 = (a + b·W0^C1·AR^C2·(T/W)^C3·(W0/S)^C4·Mmax^C5)·Kvs`
-    - 7.ª ed.: `We/W0 = a·W0^C1·AR^C2·(T/W)^C3·(W0/S)^C4·Mmax^C5·Kvs`
-      (la 7.ª ed. solo da coeficientes en unidades imperiales; `a` se convierte
-      a métrico en `TABLE_6_1`).
+    - 6.ª ed.: `We/W0 = (a + b·W0^C1·AR^C2·(T/W)^C3·(W0/S)^C4·Mmax^C5)·Kvs·Kc`
+    - 7.ª ed.: `We/W0 = a·W0^C1·AR^C2·(T/W)^C3·(W0/S)^C4·Mmax^C5·Kvs·Kc`
+  - La Tabla 6.1 viene en unidades imperiales en **las dos ediciones** (W0 en
+    lb, W0/S en lb/ft²). `TABLE_6_1` convierte a kg y kg/m² la constante que
+    multiplica a W0^C1·(W0/S)^C4: `b` en la 6.ª (0.66 → 0.645) y `a` en la 7.ª
+    (0.869 → 1.089).
+  - `Kc = Design.k_composite`: 0.95 para estructura de compuesto (Raymer cap. 3).
 
 ### `resolve(mission, aero, design=None, refined=False, w0_initial=5e5, tol=1e-2, max_iter=1000)`
 

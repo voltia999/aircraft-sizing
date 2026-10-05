@@ -135,6 +135,8 @@ def report(out: dict) -> None:
 
     header("Tail")
     row("Tail arm", t["arm"], "m", fmt=".2f")
+    row("c_HT used", t["c_ht"], fmt=".3f")
+    row("c_VT used", t["c_vt"], fmt=".3f")
     row("Horizontal S", t["s_ht"], "m2", ref.s_ht)
     row("Vertical S", t["s_vt"], "m2", ref.s_vt)
     if ref.s_ht and ref.s_vt:
@@ -142,6 +144,9 @@ def report(out: dict) -> None:
         c = implied_coefficients(ref.s_ht, ref.s_vt, w["MAC"], w["b"], w["S"], t["arm"])
         row("Implied c_HT (actual)", c["c_ht"], fmt=".2f")
         row("Implied c_VT (actual)", c["c_vt"], fmt=".3f")
+    if "v_tail" in t:
+        row("V-tail total area", t["v_tail"]["area"], "m2")
+        row("V-tail dihedral", t["v_tail"]["dihedral"], "deg")
     for name, value in t["controls"].items():
         row(name.capitalize(), value, "m2")
 

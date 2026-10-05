@@ -8,6 +8,7 @@ Source: Raymer, Aircraft Design: A Conceptual Approach (6th ed.), chapter 6
 """
 
 from dataclasses import dataclass
+from math import atan, degrees, sqrt
 
 # Tail volume coefficients, Raymer Table 6.4 (jet transport)
 C_HT_JET_TRANSPORT = 1.00
@@ -17,6 +18,13 @@ C_VT_JET_TRANSPORT = 0.09
 # 0.50-0.55 for wing-mounted engines, 0.45-0.50 for aft-fuselage engines.
 ARM_FRACTION_WING_ENGINES = 0.50
 ARM_FRACTION_AFT_ENGINES = 0.45
+
+# Volume coefficient reductions, Raymer 6.4 (multiplying factors)
+T_TAIL_FACTOR = 0.95          # T-tail: horizontal (clean air) and vertical (end plate)
+H_TAIL_FACTOR = 0.95          # H-tail: horizontal
+ALL_MOVING_FACTOR = 0.875     # all-moving horizontal tail: 10-15 % smaller
+FLY_BY_WIRE_FACTOR = 0.90     # active flight controls: both tails ~10 % smaller
+TAIL_CONFIGURATIONS = ("conventional", "t-tail", "h-tail", "v-tail")
 
 # Control surface sizing, Raymer 6.6 (jet transport)
 AILERON_CHORD_RATIO = 0.23     # Fig. 6.3, middle of the band for a 0.4 span
@@ -42,12 +50,42 @@ class ControlSurfaceRatios:
 class TailCoefficients:
     """Volume coefficients and arm. Defaults are Raymer's jet transport values.
 
-    Lower coefficients are justified for large fly-by-wire aircraft with
-    relaxed static stability (the A380 works at c_ht ~ 0.6-0.7).
+    c_ht and c_vt are the Table 6.4 values for a conventional tail; the
+    configuration, all_moving and fly_by_wire options apply the reductions of
+    Raymer 6.4 on top (see effective_coefficients). A "v-tail" is sized as a
+    conventional tail and then merged into two surfaces of the same total area.
     """
     c_ht: float = C_HT_JET_TRANSPORT
     c_vt: float = C_VT_JET_TRANSPORT
     arm_fraction: float = ARM_FRACTION_WING_ENGINES
+    configuration: str = "conventional"   # "conventional", "t-tail", "h-tail", "v-tail"
+    all_moving: bool = False              # all-moving horizontal tail
+    fly_by_wire: bool = False             # active flight control system
+
+
+def effective_coefficients(coeffs: TailCoefficients) -> tuple:
+    """(c_HT, c_VT) after the Raymer 6.4 reductions for configuration and controls."""
+    if coeffs.configuration not in TAIL_CONFIGURATIONS:
+        raise ValueError(f"Unknown tail configuration '{coeffs.configuration}'; "
+                         f"valid: {TAIL_CONFIGURATIONS}")
+    c_ht, c_vt = coeffs.c_ht, coeffs.c_vt
+    if coeffs.configuration == "t-tail":
+        c_ht, c_vt = c_ht * T_TAIL_FACTOR, c_vt * T_TAIL_FACTOR
+    elif coeffs.configuration == "h-tail":
+        c_ht *= H_TAIL_FACTOR
+    if coeffs.all_moving:
+        c_ht *= ALL_MOVING_FACTOR
+    if coeffs.fly_by_wire:
+        c_ht, c_vt = c_ht * FLY_BY_WIRE_FACTOR, c_vt * FLY_BY_WIRE_FACTOR
+    return c_ht, c_vt
+
+
+def v_tail(s_ht: float, s_vt: float) -> dict:
+    """V-tail with the same total area as the conventional tail (Raymer 6.4).
+
+    Dihedral = atan(sqrt(S_VT / S_HT)), normally near 45 deg.
+    """
+    return {"area": s_ht + s_vt, "dihedral": degrees(atan(sqrt(s_vt / s_ht)))}
 
 
 def tail_arm(fuselage_length: float, coeffs: TailCoefficients) -> float:
@@ -119,11 +157,15 @@ def tail_geometry(wing: dict, fuselage_length: float,
     with keys 'S', 'b', 'MAC', 'c_root' and 'c_tip'.
     """
     coeffs = coeffs or TailCoefficients()
+    c_ht, c_vt = effective_coefficients(coeffs)
     arm = tail_arm(fuselage_length, coeffs)
-    s_ht = horizontal_tail_area(wing["MAC"], wing["S"], arm, coeffs.c_ht)
-    s_vt = vertical_tail_area(wing["b"], wing["S"], arm, coeffs.c_vt)
-    return {
-        "arm": arm, "s_ht": s_ht, "s_vt": s_vt,
+    s_ht = horizontal_tail_area(wing["MAC"], wing["S"], arm, c_ht)
+    s_vt = vertical_tail_area(wing["b"], wing["S"], arm, c_vt)
+    result = {
+        "arm": arm, "c_ht": c_ht, "c_vt": c_vt, "s_ht": s_ht, "s_vt": s_vt,
         "controls": control_surfaces(wing, s_ht, s_vt, ratios),
     }
+    if coeffs.configuration == "v-tail":
+        result["v_tail"] = v_tail(s_ht, s_vt)
+    return result
 
