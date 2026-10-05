@@ -1,9 +1,9 @@
-from data import Mission, Aerodynamics, Design
-from aerodynamic import velocity_rel, ld_max, ld_max_polar, ld_cruise, ld_cruise_refined
-from results import Result
+from core.data import Mission, Aerodynamics, Design
+from methods.aerodynamic import velocity_rel, ld_max, ld_max_polar, ld_cruise, ld_cruise_refined
+from core.results import Result
 import numpy as np
 
-from constants import LB, FT2
+from core.constants import LB, FT2
 
 # Raymer Table 3.1, jet transport (metric), by edition: We/W0 = a * W0^C
 TABLE_3_1 = {6: {"a": 0.97, "C": -0.06},

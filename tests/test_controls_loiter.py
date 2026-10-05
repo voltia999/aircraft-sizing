@@ -7,9 +7,8 @@ and 12.6.1 for the guion's aircraft (A = 9.5, e = 0.77, CD0 = 0.0156).
 import numpy as np
 import pytest
 
-import aerodynamic
-import weight
-from data import Mission, Aerodynamics
+from methods import aerodynamic, weight
+from core.data import Mission, Aerodynamics
 from geometry import tail
 
 REL = 1e-3

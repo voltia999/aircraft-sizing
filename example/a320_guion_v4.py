@@ -16,11 +16,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import aerodynamic
-import constraints
-import weight
-from constants import G, NM, KT, HOUR
-from data import Mission, Aerodynamics, Design, Reference
+from core.constants import G, NM, KT, HOUR
+from core.data import Mission, Aerodynamics, Design, Reference
+from methods import aerodynamic, constraints, weight
 from geometry import fuselage, tail, wing
 from geometry.fuselage import Deck, SeatingZone
 

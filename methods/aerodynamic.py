@@ -1,8 +1,8 @@
-from data import Mission, Aerodynamics, Design
+from core.data import Mission, Aerodynamics, Design
 import numpy as np
 
 from ambiance import Atmosphere
-from constants import G
+from core.constants import G
 
 
 def cruise_density(mission: Mission) -> float:

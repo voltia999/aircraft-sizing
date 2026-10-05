@@ -8,9 +8,7 @@ Equation and section numbers refer to the PDF.
 
 import pytest
 
-import aerodynamic
-import constraints
-import weight
+from methods import aerodynamic, constraints, weight
 from geometry import fuselage, tail, wing
 from main import CASES, run
 

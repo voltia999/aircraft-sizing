@@ -9,11 +9,9 @@ Equation and section numbers refer to the PDF.
 import numpy as np
 import pytest
 
-import aerodynamic
-import constraints
-import weight
-from constants import G, NM, KT
-from data import Mission, Aerodynamics, Design
+from methods import aerodynamic, constraints, weight
+from core.constants import G, NM, KT
+from core.data import Mission, Aerodynamics, Design
 from geometry import fuselage, tail, wing
 from geometry.fuselage import Deck, SeatingZone
 

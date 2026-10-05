@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 import numpy as np
 
-from constants import NM, KT, HOUR, G
+from core.constants import NM, KT, HOUR, G
 
 
 @dataclass

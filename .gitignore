@@ -22,7 +22,8 @@ htmlcov/
 .DS_Store
 
 # Casos de aviones (de momento solo en local)
-cases/
+cases/*
+!cases/README.md
 
 # LaTeX (archivos auxiliares de compilación; el PDF sí se versiona)
 *.aux

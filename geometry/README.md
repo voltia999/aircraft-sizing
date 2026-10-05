@@ -234,6 +234,10 @@ relajada: el A380 trabaja con c_HT ≈ 0.6–0.7.
 | `implied_coefficients(s_ht, s_vt, mac, span, wing_area, arm)` | Método inverso: `{"c_ht", "c_vt"}` de un avión real |
 | `tail_geometry(wing, fuselage_length, coeffs=None)` | Ensamblado completo |
 
+`main.run()` pasa como `fuselage_length` la longitud por cabina o, si
+`Design.tail_arm_length = "statistical"`, la estadística de la Tabla 6.3
+(`statistical_length`), como hace el guion V4 (sec. 9.2.1).
+
 La cola vertical usa la **envergadura** como longitud de referencia, no la MAC,
 porque los momentos de guiñada que compensa (por ejemplo, con un motor parado)
 escalan con b.

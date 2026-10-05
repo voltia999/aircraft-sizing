@@ -29,15 +29,29 @@ python example/a320_guion_v4.py     # el mismo caso, paso a paso frente al PDF d
 python -m pytest tests              # regresión contra los guiones
 ```
 
-Para dimensionar tu propio avión, copia `example/a320_guion_v4.py` en `cases/`
-y cambia sus entradas (ver [Añadir un caso](#añadir-un-caso)).
-[`example/README.md`](example/README.md) explica el ejemplo y sus diferencias
-con el guion.
+Para dimensionar tu propio avión, copia el ejemplo en `cases/` y cambia sus
+entradas: lo explica [`cases/README.md`](cases/README.md).
+
+## Qué hay en cada carpeta
+
+Cada carpeta tiene su propio README con el detalle.
+
+| Carpeta | Qué contiene | Léelo si… |
+|---|---|---|
+| [`example/`](example/README.md) | El caso del guion V4, que también es un recorrido paso a paso | empiezas: es la mejor forma de ver el método completo |
+| [`cases/`](cases/README.md) | Tus casos de trabajo (no se versionan) | quieres dimensionar otro avión |
+| [`core/`](core/README.md) | Entradas (`Mission`, `Aerodynamics`, `Design`, `Reference`), `Result` y constantes | necesitas saber qué significa cada campo y sus unidades |
+| [`methods/`](methods/README.md) | Aerodinámica, pesos (iteración de W0) y restricciones | quieres ver o cambiar una ecuación de Raymer |
+| [`geometry/`](geometry/README.md) | Ala, fuselaje desde la cabina y empenaje | trabajas en la geometría |
+| [`tests/`](tests/README.md) | Regresión contra los guiones V2 y V4 | cambias algo y quieres comprobar que no rompes nada |
+| [`docs/`](docs/README.md) | Metodología en LaTeX/PDF | quieres la justificación de cada ecuación |
+
+`main.py` es la línea de órdenes: descubre los casos, ejecuta el cálculo e
+imprime el informe.
 
 ## Uso
 
-Los módulos se importan como módulos de primer nivel, así que hay que ejecutar
-desde este directorio:
+Desde este directorio (los módulos se importan desde la raíz del repositorio):
 
 ```bash
 python main.py                         # caso por defecto: guion-v4, cálculo refinado
@@ -46,11 +60,6 @@ python main.py guion-v4 --edition 6    # fuerza la edición de Raymer (6 o 7)
 python main.py guion-v4 --descent      # añade el segmento de descenso (--no-descent lo quita)
 python main.py --help                  # lista los casos disponibles
 ```
-
-Los casos se descubren solos: cualquier `.py` con una función `case()` en
-`example/` (versionado) o en `cases/` (casos de trabajo locales, ignorados por
-git). El nombre en la línea de órdenes es la variable `NAME` del módulo, o el
-nombre del archivo con `-` en lugar de `_`.
 
 Salida (extracto de `python main.py`):
 
@@ -73,7 +82,7 @@ Wing
 La columna *error* es `calculado / real − 1`; solo aparece cuando el caso
 define el dato real correspondiente.
 
-Uso desde Python:
+Desde Python:
 
 ```python
 from main import run, report
@@ -83,255 +92,22 @@ print(out["weights"].w0)              # MTOW [kg]
 report(out)
 ```
 
----
+## Flujo de cálculo
 
-## Estructura
-
-```
-sizing/
-├── main.py            CLI: descubre los casos, ejecuta uno e imprime el informe
-├── requirements.txt   Dependencias
-├── constants.py       Constantes físicas y conversiones de unidades
-├── data.py            Dataclasses de entrada: Mission, Aerodynamics, Design, Reference
-├── results.py         Dataclass Result (salida de la iteración de pesos)
-├── aerodynamic.py     Atmósfera, L/D, flecha, Oswald, polar (CD0, K)
-├── weight.py          Fracciones de misión, fracción en vacío e iteración de W0
-├── constraints.py     Límites de carga alar y T/W estadístico
-├── geometry/
-│   ├── wing.py        Geometría del ala trapezoidal
-│   ├── fuselage.py    Sección y longitud del fuselaje desde la cabina
-│   └── tail.py        Empenaje por coeficientes de volumen
-├── example/           Caso del guion V4 y recorrido paso a paso (versionado)
-├── cases/             Casos de trabajo locales (no versionado)
-├── docs/              Metodología (LaTeX) y guion V4
-└── tests/             Regresión contra los guiones V2 y V4
-```
-
-Flujo de cálculo en `main.run()`:
+`main.run()` encadena las carpetas en este orden:
 
 ```
-case() ─► Mission, Aerodynamics, Design, Reference
+case() ─► Mission, Aerodynamics, Design, Reference          core/
             │
-            ├─► weight.resolve() ────────► W0, We/W0, Wf/W0
-            ├─► constraints.*   ─────────► W/S máx. (aterrizaje, crucero)
-            ├─► wing.wing_geometry(W0) ──► S, b, cuerdas, MAC
-            ├─► fuselage.fuselage_geometry(decks) ─► longitud, sección
+            ├─► weight.resolve() ────────► W0, We/W0, Wf/W0   methods/
+            ├─► constraints.*   ─────────► W/S máx.           methods/
+            ├─► wing.wing_geometry(W0) ──► S, b, cuerdas, MAC geometry/
+            ├─► fuselage.fuselage_geometry(decks) ─► Lf, sección
             └─► tail.tail_geometry(ala, Lf) ─► S_HT, S_VT, mandos
 ```
 
 El empenaje se calcula el último porque necesita el ala (MAC, S, b) y la
 longitud del fuselaje (que fija el brazo de cola).
-
-Detalle de las funciones geométricas, constantes y claves de retorno en
-[`geometry/README.md`](geometry/README.md).
-
----
-
-## Datos de entrada (`data.py`)
-
-### `Mission` — requisitos de misión
-
-| Campo | Defecto | Unidad | Descripción |
-|---|---|---|---|
-| `n_pax` | — | | Número de pasajeros (obligatorio) |
-| `m_pax` | 100 | kg | Masa por pasajero con equipaje |
-| `n_trip`, `m_trip` | 6, 95 | —, kg | Tripulantes y masa por tripulante |
-| `range` | 3000 NM | m | Alcance de crucero |
-| `mach` | 0.78 | | Mach de crucero |
-| `altitude` | 11 000 | m | Altitud de crucero |
-| `loiter` | 20 min | s | Tiempo de espera |
-| `v_aprox` | 135 kt | m/s | Velocidad de aproximación |
-| `F_takeoff`, `F_ascent`, `F_descent`, `F_landing` | 0.970, 0.985, 0.990, 0.995 | | Fracciones de segmento (Raymer Tabla 3.2; el descenso no está en la 6.ª ed.) |
-| `descent` | `True` | | Incluye `F_descent`; `False` = Raymer 6.ª ed. (descenso dentro del crucero) |
-| `F_reserve` | 1.06 | | Factor de combustible atrapado y de reserva (6 %) |
-
-### `Aerodynamics` — hipótesis aerodinámicas
-
-| Campo | Defecto | Descripción |
-|---|---|---|
-| `AR` | 9.5 | Alargamiento |
-| `swet_sref` | 6.0 | Relación superficie mojada / de referencia |
-| `k_ld` | 15.5 | Constante de (L/D)max = K_LD·√(AR / (Swet/Sref)) |
-| `ld_max` | `None` | (L/D)max fijado a mano; con `None` se calcula con `k_ld` |
-| `taper_ratio` | 0.24 | Estrechamiento λ |
-| `sweep_c4` | 25° | Flecha en c/4 (**en radianes**) |
-| `c_cruise`, `c_loiter` | 0.5 h⁻¹ | Consumo específico (en s⁻¹: `0.5 / HOUR`) |
-| `cfe` | 0.0026 | Coeficiente de fricción equivalente |
-
-### `Design` — decisiones de proyecto
-
-| Campo | Defecto | Descripción |
-|---|---|---|
-| `wing_loading` | 600 kg/m² | Carga alar W0/S elegida |
-| `cruise_wing_loading` | `None` | W/S forzada para la polar de crucero; con `None` se usa la W/S real a mitad de crucero |
-| `thrust_to_weight` | 0.30 | T/W |
-| `n_engines` | 2 | Número de motores |
-| `max_mach` | 0.82 | Mach máximo |
-| `cl_max_landing` | 2.8 | CLmax en aterrizaje |
-| `mlw_fraction` | 0.85 | MLW / MTOW |
-| `vref_factor` | 1.23 | Vref / Vstall (CS-25) |
-| `k_vs` | 1.0 | Factor de flecha variable (1.04 si la hay) |
-| `raymer_edition` | 7 | Edición de las tablas 3.1, 6.1 y 6.3 (6 o 7) |
-| `max_span` | `None` | Límite de envergadura del aeropuerto (m) — ver *Limitaciones* |
-| `decks` | `[]` | Lista de `Deck` (distribución de cabina) |
-| `fuselage` | `{}` | Valores fijados: `diameter`, `nose`, `tailcone` [m] |
-| `tail_arm_fraction` | 0.50 | Brazo de cola / longitud del fuselaje |
-| `tail_arm_length` | `"cabin"` | Longitud que fija el brazo: `"cabin"` (disposición de cabina) o `"statistical"` (Tabla 6.3) |
-
-### `Reference` — avión real (solo validación)
-
-Datos publicados (MTOW, OEW, MLW, superficie alar, envergadura, dimensiones de
-fuselaje, superficies de cola, empuje…). Un campo a `0.0` significa "sin dato"
-y no se compara. Las propiedades `wing_loading` y `thrust_to_weight` se derivan
-de los demás campos.
-
----
-
-## Métodos
-
-### Aerodinámica (`aerodynamic.py`)
-
-| Función | Fórmula |
-|---|---|
-| `cruise_density`, `velocity_rel` | ISA (`ambiance`) a `altitude`; V = M·a |
-| `ld_max` | `aero.ld_max` si está fijado; si no, K_LD · √(AR / (Swet/Sref)) |
-| `ld_max_polar` | (L/D)max de la polar, 1 / (2·√(CD0·K)); espera del refinado |
-| `ld_cruise` | 0.866 · (L/D)max (jet) |
-| `ld_cruise_refined` | 1 / (q·CD0/(W/S) + (W/S)·K/q), con q = ½ρV²; W/S en N/m² (el argumento `wing_loading`, o `cruise_wing_loading`, o `wing_loading` de diseño) |
-| `sweep_le` | atan(tan Λc/4 + (1−λ) / (AR(1+λ))) |
-| `oswald` | e₀ = 1 − 0.045·AR^0.68; si Λ_LE > 30°: 4.61·e₀·cos(Λ_LE)^0.15 − 3.1, si no: 1.78·e₀ − 0.64 |
-| `oswald_in_typical_range` | e dentro de 0.70–0.85 (Raymer 12.6.1); el informe avisa si no |
-| `cd0` | Cfe · Swet/Sref |
-| `k` | 1 / (π·AR·e) |
-
-### Pesos (`weight.py`)
-
-- **Peso fijo**: `w_fixed = n_pax·m_pax + n_trip·m_trip`.
-- **Crucero** (Breguet): `F_cruise = exp(−R·c / (V·(L/D)crucero))`; con `design`
-  (cálculo refinado) usa `ld_cruise_refined` con la W/S real a mitad de crucero,
-  si no `ld_cruise`.
-- **W/S a mitad de crucero** (`mid_cruise_wing_loading`, Raymer nota a la ec. 6.13):
-  `(W/S)_mid = (W0/S)·F_despegue·F_ascenso·(1 + F_crucero)/2`, iterada porque
-  `F_crucero` depende de la L/D. Si `Design.cruise_wing_loading` está fijado, se usa ese valor.
-- **Espera** (Breguet, ec. 6.14): `F_loiter = exp(−E·c / (L/D)max)`, con la (L/D)max de
-  `ld_max` en primer orden y la de la polar (`ld_max_polar`) en el refinado.
-- **Subida refinada** (Raymer 6.3.6): `F_ascent_refined = 1.0065 − 0.0325·M`.
-- **Combustible**: `Wf/W0 = F_reserve · (1 − ∏ fracciones)`; `F_descent` solo
-  entra si `mission.descent` es `True`.
-- **Fracción en vacío**:
-  - Primer orden, `F_empty` (Tabla 3.1): `We/W0 = a·W0^C·Kvs`.
-  - Refinado, `F_empty_refined` (Tabla 6.1):
-    - 6.ª ed.: `We/W0 = (a + b·W0^C1·AR^C2·(T/W)^C3·(W0/S)^C4·Mmax^C5)·Kvs`
-    - 7.ª ed.: `We/W0 = a·W0^C1·AR^C2·(T/W)^C3·(W0/S)^C4·Mmax^C5·Kvs`
-      (la 7.ª ed. solo da coeficientes en unidades imperiales; `a` se convierte a métrico en `TABLE_6_1`).
-
-**`resolve(mission, aero, design=None, refined=False, w0_initial=5e5, tol=1e-2, max_iter=1000)`**
-itera por punto fijo
-
-```
-W0 = (Wcrew + Wpayload) / (1 − Wf/W0 − We/W0)
-```
-
-hasta que |ΔW0| < `tol` (kg). Devuelve un `Result` con `w0`, `wf_w0`, `we_w0`,
-el historial de iteraciones y las propiedades `w_empty` y `w_fuel`.
-
-- `refined=True` usa la subida dependiente de Mach, la L/D de crucero de la polar
-  (`ld_cruise_refined`) y la Tabla 6.1, y exige un `Design`.
-- Lanza `ValueError` si `Wf/W0 + We/W0 ≥ 1` (misión no cerrable) y
-  `RuntimeError` si no converge.
-
-### Restricciones (`constraints.py`)
-
-- `landing_wing_loading`: Vstall = V_aprox / vref_factor;
-  W/S_aterrizaje = ½·ρ₀·Vstall²·CLmax / g, referida a despegue dividiendo por `mlw_fraction`.
-- `cruise_wing_loading`: W/S para el CL óptimo de crucero,
-  CL_opt = √(CD0 / 3K), referida a despegue dividiendo por las fracciones de despegue y subida.
-- `statistical_thrust_to_weight`: T/W = a·Mmax^C (Raymer Tabla 5.3, `TABLE_5_3`):
-  6.ª ed. a = 0.267, C = 0.363; 7.ª ed. a = 0.297, C = 0.350.
-- `is_feasible`: comprueba W/S ≤ límite de aterrizaje.
-
-### Ala (`geometry/wing.py`)
-
-`wing_geometry(w0, aero, design)` para un ala trapezoidal:
-S = W0 / (W/S), b = √(AR·S), c_raíz = 2S / (b(1+λ)), c_punta = λ·c_raíz,
-MAC = ⅔·c_raíz·(1+λ+λ²)/(1+λ). Devuelve un dict con `S`, `b`, `AR`,
-`c_root`, `c_tip`, `MAC`.
-
-### Fuselaje (`geometry/fuselage.py`)
-
-La cabina se describe con `Deck` (cubierta) compuestas por `SeatingZone`
-(zona de asientos: clase, asientos por fila, número de asientos, ancho y paso).
-
-- **Sección**: ancho de cabina = n·ancho_asiento + pasillos·0.51 + n·0.05;
-  ancho exterior = cabina + 2·estructura; altura = quilla + bodega (LD3/LD3-45)
-  + (suelo + cabina) por cubierta + corona; diámetro equivalente √(ancho·alto).
-- **Longitud de cubierta** (`deck_length`): filas·paso + galleys (1 módulo por
-  `pax_per_galley_module`) + lavabos (redondeo por zona) + pares de salidas
-  tipo A (CS 25.807, 110 pax por par) + escaleras.
-- **Morro y cono de cola**: criterio de ángulos de contorno (Raymer Fig. 8.2).
-- **Longitud estadística** (Tabla 6.3): Lf = a·W0^C1, solo como comprobación.
-
-`fuselage_geometry(decks, w0=None, **kwargs)` toma la cubierta más larga como
-dimensionante. Con `diameter`, `nose` o `tailcone` en `kwargs` (o en
-`Design.fuselage`) esos valores se fijan en lugar de calcularse.
-
-### Empenaje (`geometry/tail.py`)
-
-- Brazo de cola: `arm_fraction · Lf` (0.50–0.55 motores en ala, 0.45–0.50 motores traseros).
-  Lf es la longitud por cabina, o la estadística de la Tabla 6.3 si
-  `Design.tail_arm_length = "statistical"` (como hace el guion V4, sec. 9.2.1).
-- S_HT = c_HT·MAC·S / L_HT, S_VT = c_VT·b·S / L_VT, con c_HT = 1.00 y
-  c_VT = 0.09 (Raymer Tabla 6.4, transporte a reacción) por defecto en `TailCoefficients`.
-- Mandos: alerones 5 % de S, timón de profundidad 30 % de S_HT, timón de dirección 30 % de S_VT.
-- `implied_coefficients` invierte el método: da los c_HT y c_VT reales de un
-  avión existente sobre el ala y el brazo calculados (aparece en el informe).
-
----
-
-## Añadir un caso
-
-1. Copia `example/a320_guion_v4.py` en `cases/<avion>.py`.
-2. Cambia `NAME` (el nombre en la línea de órdenes) y las entradas de `case()`,
-   que devuelve `(mission, aero, design, reference)`. La cabina se define con
-   `Deck` / `SeatingZone` en `design.decks`.
-3. Borra la parte del recorrido (de `# --- worked example` hacia abajo).
-4. `python main.py <NAME>`. No hace falta registrarlo en ningún sitio.
-
-Convención: los comentarios `(H)` marcan hipótesis propias, no datos
-publicados. Si el caso debe compartirse con todos, va en `example/` en lugar de
-`cases/`.
-
----
-
-## Tests
-
-```bash
-python -m pytest tests
-```
-
-Todos los tests de los guiones comprueban cada ecuación con tolerancia
-relativa del 1 % (los PDF redondean a unas tres cifras significativas).
-`tests/conftest.py` añade el directorio raíz al `sys.path`.
-
-- `tests/test_guion_v4.py`: regresión contra
-  `docs/Dimensionamiento_preliminar_aeronave_Raymer_V4.pdf` (Raymer 7.ª ed.).
-  Usa el `case()` de `example/a320_guion_v4.py`, así que el ejemplo y los tests
-  no pueden separarse. Para las magnitudes del guion que dependen del W0
-  refinado se evalúa en su W0 (79 800 kg); `test_code_refined_w0` fija además
-  el W0 refinado del propio código (71 936 kg) para detectar cambios no
-  intencionados.
-- `tests/test_guion_v2.py`: regresión contra
-  `Dimensionamiento_preliminar_aeronave_Raymer_V2.pdf` (Raymer 6.ª ed.).
-
-Estado actual: **45 correctos, 3 fallos conocidos**, todos del V2:
-
-- `test_cabin_length`: el guion usa 3 lavabos para 150 plazas (uno cada 50); el
-  código redondea por zona (12/50 → 1, 138/50 → 3) y obtiene 4, así que la
-  cabina sale 0.95 m más larga.
-- `test_fuselage_length`: consecuencia del anterior (38.34 m frente a 37.5 m).
-- `test_refined_w0`: el código usa la W/S real a mitad de crucero para la L/D
-  de la polar y la (L/D)max de la polar en la espera; el guion V2 usa la W/S de
-  diseño y la espera de primer orden (66 900 kg frente a 72 000 kg).
 
 ---
 
@@ -342,14 +118,17 @@ Estado actual: **45 correctos, 3 fallos conocidos**, todos del V2:
 - La restricción de crucero y `statistical_thrust_to_weight` se informan, pero
   no modifican el diseño: W/S y T/W son entradas de `Design`.
 - `is_feasible` y `Design.table_6_1_metric` no se usan en el flujo principal.
-- Los módulos usan importaciones absolutas de primer nivel (`from data import …`),
-  por lo que hay que ejecutar desde este directorio o añadirlo al `PYTHONPATH`
+- Los imports son relativos a la raíz (`from core.data import …`), así que hay
+  que ejecutar desde este directorio o añadirlo al `PYTHONPATH`
   (`example/a320_guion_v4.py` se encarga de ello y funciona desde cualquier sitio).
+
+Las limitaciones propias de la geometría están en
+[`geometry/README.md`](geometry/README.md#limitaciones), y las diferencias con
+el guion V4 en [`example/README.md`](example/README.md#diferencias-con-el-guion).
 
 ## Referencias
 
 - D. P. Raymer, *Aircraft Design: A Conceptual Approach*, 6.ª y 7.ª ed.
-  (Tablas 3.1, 3.2, 3.3, 5.3, 6.1, 6.3, 6.4; Fig. 8.2).
+  (Tablas 3.1, 3.2, 3.3, 5.3, 6.1, 6.3, 6.4, 6.5; Figs. 6.3 y 8.2).
 - CS-25 (EASA): factor Vref, 25.807 (salidas de emergencia).
-- Documentos del curso en `../`: guion V2/DEF, cambios de Raymer v7 y
-  `MTOW_A380_Raymer.pdf`.
+- Guiones del curso: V2 (Raymer 6.ª ed.) y V4 (7.ª ed., en `docs/`).

@@ -2,9 +2,9 @@ import argparse
 import importlib.util
 from pathlib import Path
 
-import weight, constraints, aerodynamic
+from methods import weight, constraints, aerodynamic
 from geometry import wing, fuselage, tail
-from constants import G
+from core.constants import G
 from geometry.tail import implied_coefficients
 
 ROOT = Path(__file__).resolve().parent

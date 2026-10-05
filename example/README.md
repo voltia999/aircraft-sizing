@@ -36,7 +36,8 @@ código rompe el ejemplo, los tests fallan.
 Para dimensionar otro avión, copia `a320_guion_v4.py` en `cases/` con otro
 nombre, cambia `NAME` y las entradas de `case()`, y borra la parte del
 recorrido (de `# --- worked example` hacia abajo). `main.py` lo detecta sin
-registrarlo en ningún sitio.
+registrarlo en ningún sitio. Los pasos completos están en
+[`cases/README.md`](../cases/README.md).
 
 ## Diferencias con el guion
 

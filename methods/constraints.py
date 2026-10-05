@@ -1,6 +1,6 @@
-from constants import G, RHO_SL
-from data import Mission, Aerodynamics, Design
-from aerodynamic import cd0, k, cruise_density, velocity_rel
+from core.constants import G, RHO_SL
+from core.data import Mission, Aerodynamics, Design
+from methods.aerodynamic import cd0, k, cruise_density, velocity_rel
 import numpy as np
 
 def landing_wing_loading(mission: Mission, design: Design) -> float:
