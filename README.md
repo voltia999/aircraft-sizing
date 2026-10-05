@@ -133,3 +133,8 @@ el guion V4 en [`example/README.md`](example/README.md#diferencias-con-el-guion)
   (Tablas 3.1, 3.2, 3.3, 5.3, 6.1, 6.3, 6.4, 6.5; Figs. 6.3 y 8.2).
 - CS-25 (EASA): factor Vref, 25.807 (salidas de emergencia).
 - Guiones del curso: V2 (Raymer 6.ª ed.) y V4 (7.ª ed., en `docs/`).
+
+## Licencia
+
+[MIT](LICENSE). Los coeficientes y ecuaciones son los publicados por Raymer y
+se citan con su tabla o ecuación; los guiones del curso no se incluyen.

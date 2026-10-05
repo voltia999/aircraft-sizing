@@ -32,7 +32,10 @@ propósito, actualiza ese valor.
 
 ## Fallos conocidos
 
-Estado actual: **66 correctos, 3 fallos conocidos**, todos del V2:
+Estado actual: **66 correctos y 3 fallos esperados** (`xfail`), todos del V2.
+Están marcados con `@pytest.mark.xfail(strict=True, reason=...)`: pytest los
+cuenta como esperados y, si algún día pasan, lo avisa como error para que se
+quite la marca.
 
 - `test_cabin_length`: el guion usa 3 lavabos para 150 plazas (uno cada 50); el
   código redondea por zona (12/50 → 1, 138/50 → 3) y obtiene 4, así que la
