@@ -1,5 +1,7 @@
 # sizing — Dimensionamiento preliminar de aviones de transporte a reacción
 
+[![tests](https://github.com/voltia999/aircraft-sizing/actions/workflows/tests.yml/badge.svg)](https://github.com/voltia999/aircraft-sizing/actions/workflows/tests.yml)
+
 Herramienta en Python para el dimensionamiento conceptual de un avión de
 transporte siguiendo *Raymer, Aircraft Design: A Conceptual Approach*
 (tablas estadísticas de la 6.ª y 7.ª edición). A partir de la misión y de unas
@@ -23,7 +25,8 @@ alar en **kg/m²**.
 Requiere Python 3.10+. Desde este directorio:
 
 ```bash
-pip install -r requirements.txt     # numpy, ambiance (ISA), pytest; matplotlib y jupyter para la notebook
+pip install -r requirements.txt     # numpy y ambiance (ISA): lo justo para el cálculo
+pip install -r requirements-dev.txt # además pytest, y matplotlib y jupyter para la notebook
 python main.py                      # dimensiona el caso del guion V4 e imprime el informe
 python example/a320_guion_v4.py     # el mismo caso, paso a paso frente al PDF del guion
 jupyter notebook example/a320_guion_v4.ipynb   # el guion explicado, con ecuaciones y gráficas
@@ -132,9 +135,10 @@ el guion V4 en [`example/README.md`](example/README.md#diferencias-con-el-guion)
 - D. P. Raymer, *Aircraft Design: A Conceptual Approach*, 6.ª y 7.ª ed.
   (Tablas 3.1, 3.2, 3.3, 5.3, 6.1, 6.3, 6.4, 6.5; Figs. 6.3 y 8.2).
 - CS-25 (EASA): factor Vref, 25.807 (salidas de emergencia).
-- Guiones del curso: V2 (Raymer 6.ª ed.) y V4 (7.ª ed., en `docs/`).
+- Guiones del curso: V2 (Raymer 6.ª ed.) y V4 (7.ª ed., incluido en `docs/`).
 
 ## Licencia
 
 [MIT](LICENSE). Los coeficientes y ecuaciones son los publicados por Raymer y
-se citan con su tabla o ecuación; los guiones del curso no se incluyen.
+se citan con su tabla o ecuación. El guion V4 de `docs/` es material del
+curso y no está cubierto por la licencia MIT.

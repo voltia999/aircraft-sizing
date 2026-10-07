@@ -10,7 +10,7 @@ Hay dos formas de recorrer el guion:
 La notebook se ve ya ejecutada en GitHub. Para ejecutarla tú:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 jupyter notebook example/a320_guion_v4.ipynb   # o ábrela en VS Code
 ```
 
