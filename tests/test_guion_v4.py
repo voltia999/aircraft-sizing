@@ -136,3 +136,4 @@ def test_tail(inputs):
     assert t["arm"] == pytest.approx(20.07, rel=REL)
     assert t["s_ht"] == pytest.approx(27.9, rel=REL)
     assert t["s_vt"] == pytest.approx(21.2, rel=REL)
+    assert t["controls"]["ailerons"] == pytest.approx(0.05 * w["S"], rel=REL)

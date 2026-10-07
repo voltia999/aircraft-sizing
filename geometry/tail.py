@@ -39,9 +39,12 @@ class ControlSurfaceRatios:
 
     Control surfaces keep a constant percent chord (Raymer 6.6), so the elevator
     and rudder area ratios equal their chord ratios when they span the whole tail.
+    aileron_area_fraction, when set, gives the ailerons directly as a fraction
+    of S and overrides aileron_chord and aileron_span.
     """
     aileron_chord: float = AILERON_CHORD_RATIO
     aileron_span: tuple = AILERON_SPAN
+    aileron_area_fraction: float | None = None
     elevator_chord: float = ELEVATOR_CHORD_RATIO
     rudder_chord: float = RUDDER_CHORD_RATIO
 
@@ -139,10 +142,13 @@ def control_surfaces(wing: dict, s_ht: float, s_vt: float,
     `wing` is the dict of geometry.wing.wing_geometry (uses 'S', 'c_root', 'c_tip').
     """
     ratios = ratios or ControlSurfaceRatios()
-    taper = wing["c_tip"] / wing["c_root"]
-    aileron_share = span_area_fraction(taper, *ratios.aileron_span)
+    if ratios.aileron_area_fraction is not None:
+        aileron_fraction = ratios.aileron_area_fraction
+    else:
+        taper = wing["c_tip"] / wing["c_root"]
+        aileron_fraction = ratios.aileron_chord * span_area_fraction(taper, *ratios.aileron_span)
     return {
-        "ailerons": ratios.aileron_chord * aileron_share * wing["S"],
+        "ailerons": aileron_fraction * wing["S"],
         "elevator": ratios.elevator_chord * s_ht,
         "rudder": ratios.rudder_chord * s_vt,
     }

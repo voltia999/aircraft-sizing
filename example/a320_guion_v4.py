@@ -76,9 +76,10 @@ def case() -> tuple:
             arm_fraction=0.50,        # 10.1: L_HT = L_VT ~ 0.5 Lf, wing engines
         ),
         controls=ControlSurfaceRatios(
+            aileron_area_fraction=0.05,  # 10.4, Table 6: 5 % of S
             elevator_chord=0.25,      # 10.4, Table 6: 25 % of S_HT
             rudder_chord=0.32,        # 10.4, Table 6: 32 % of S_VT
-        ),                            # ailerons: Raymer Fig. 6.3 (guion: 5 % of S)
+        ),
         tail_arm_length="statistical",  # 9.2.1: Lf from Table 6.3 for the tail
     )
 
@@ -202,8 +203,6 @@ def main() -> None:
     row("Ailerons", c["ailerons"], 6.6, "m2", ".1f")
     row("Elevator", c["elevator"], 7.0, "m2", ".1f")
     row("Rudder", c["rudder"], 6.8, "m2", ".1f")
-    print("\n  Ailerons: the code integrates the 50-90 % semispan band with c_a/c = 0.23"
-          "\n  (Raymer Fig. 6.3); the guion takes 5 % of S.")
 
 
 def guion_refined_w0(mission, aero, design, w0_initial: float) -> tuple:

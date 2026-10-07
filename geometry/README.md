@@ -235,6 +235,10 @@ Dataclass con `aileron_chord`, `aileron_span`, `elevator_chord` y `rudder_chord`
 con los valores de Raymer por defecto. Los mandos mantienen la cuerda relativa
 constante (Raymer 6.6), así que en los timones la fracción de área es la de cuerda.
 
+`aileron_area_fraction` (por defecto `None`) da los alerones directamente como
+fracción de S y sustituye a `aileron_chord` y `aileron_span`. El ejemplo del
+guion V4 usa 0.05.
+
 ### `TailCoefficients`
 
 Dataclass con `c_ht`, `c_vt` y `arm_fraction`, que por defecto toman los valores
@@ -262,7 +266,7 @@ Raymer da c_HT ≈ 0.1 con un brazo del 30–50 % de Lf: se fija a mano con
 | `horizontal_tail_area(mac, wing_area, arm, c_ht)` | S_HT = c_HT · MAC · S / L |
 | `vertical_tail_area(span, wing_area, arm, c_vt)` | S_VT = c_VT · b · S / L |
 | `span_area_fraction(taper, eta_in, eta_out)` | Fracción del área del ala trapezoidal entre dos estaciones de semienvergadura |
-| `control_surfaces(wing, s_ht, s_vt, ratios=None)` | Alerones = c_a/c · fracción(0.5–0.9) · S; timones = c/c · S_cola |
+| `control_surfaces(wing, s_ht, s_vt, ratios=None)` | Alerones = c_a/c · fracción(0.5–0.9) · S, o `aileron_area_fraction` · S si está definido; timones = c/c · S_cola |
 | `implied_coefficients(s_ht, s_vt, mac, span, wing_area, arm)` | Método inverso: `{"c_ht", "c_vt"}` de un avión real |
 | `effective_coefficients(coeffs)` | (c_HT, c_VT) tras las reducciones de configuración |
 | `v_tail(s_ht, s_vt)` | `{"area", "dihedral"}` de la cola en V equivalente |
@@ -284,7 +288,8 @@ coeficientes ya reducidos) y, si la cola es en V, `"v_tail"`.
 
 Ejemplo (guion V2: ala anterior, Lf = 37.5 m, brazo 0.40·Lf = 15 m):
 S_HT = 32.0 m², S_VT = 24.3 m². El guion toma alerones del 5 % de S y timones del
-30 %: 6.0, 9.6 y 7.3 m². Con los valores de Raymer (λ = 0.24) salen 8.3, 8.0 y 7.8 m².
+30 %: 6.0, 9.6 y 7.3 m² (`aileron_area_fraction=0.05`, `elevator_chord=rudder_chord=0.30`).
+Con los valores de Raymer por defecto (λ = 0.24) salen 8.3, 8.0 y 7.8 m².
 
 ```python
 from geometry import tail

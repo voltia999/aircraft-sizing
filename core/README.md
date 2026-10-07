@@ -65,7 +65,7 @@ alar en **kg/m²**.
 | `decks` | `[]` | Lista de `Deck` (distribución de cabina, ver [`geometry/`](../geometry/README.md)) |
 | `fuselage` | `{}` | Opciones de `fuselage_geometry`: valores fijados (`diameter`, `nose`, `tailcone` [m]), parámetros de la sección y ángulos de morro y cola. Una clave desconocida da error. Lista completa en [`geometry/`](../geometry/README.md#fuselage_geometrydecks-w0none-kwargs---dict) |
 | `tail` | `TailCoefficients()` | c_HT = 1.00, c_VT = 0.09 (Tabla 6.4), brazo / Lf = 0.50, y configuración (`"conventional"`, `"t-tail"`, `"h-tail"`, `"v-tail"`), `all_moving` y `fly_by_wire` con las reducciones de Raymer 6.4 |
-| `controls` | `ControlSurfaceRatios()` | Cuerdas relativas de alerones (0.23, tramo 0.5–0.9), timón de profundidad (0.25) y de dirección (0.32) |
+| `controls` | `ControlSurfaceRatios()` | Cuerdas relativas de alerones (0.23, tramo 0.5–0.9), timón de profundidad (0.25) y de dirección (0.32); con `aileron_area_fraction` los alerones son esa fracción de S |
 | `tail_arm_length` | `"cabin"` | Longitud que fija el brazo: `"cabin"` (disposición de cabina) o `"statistical"` (Tabla 6.3) |
 
 Los valores por defecto de `tail`, `controls` y de los estándares de cabina de
