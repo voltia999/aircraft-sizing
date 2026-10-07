@@ -156,10 +156,12 @@ opción `hold`:
 - `exits`: pares de salidas tipo A · 1.10.
 - `stairs`: n_staircases · 1.50.
 
-Los ángulos del morro y del cono de cola siguen el criterio de contorno de
-Raymer (Fig. 8.2). Delante se admiten ángulos mayores porque el gradiente de
-presión es favorable. Detrás, la desviación respecto a la corriente libre debe
-quedarse en 10–12° (hasta 15° por debajo) para que el flujo no se desprenda.
+Los ángulos del cono de cola siguen el criterio de contorno de Raymer
+(Fig. 8.2): la desviación respecto a la corriente libre debe quedarse en
+10–12° (hasta 15° por debajo) para que el flujo no se desprenda. La Fig. 8.2
+no da límites para el morro: sus ángulos (20° arriba, 15° abajo) son una
+hipótesis propia, algo mayores que detrás porque el gradiente de presión es
+favorable.
 
 Coeficientes de la Tabla 6.3 (métrico, transporte a reacción):
 

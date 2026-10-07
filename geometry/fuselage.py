@@ -123,9 +123,10 @@ def deck_length(deck: Deck) -> dict:
  
 def nose_length(height: float, radome_height: float = 1.00,
                 upper_angle: float = 20.0, lower_angle: float = 15.0) -> float:
-    """Nose length from the contour criterion (Raymer, Fig. 8.2).
- 
-    A favourable pressure gradient allows steeper angles at the front.
+    """Nose length from upper and lower contour angles.
+
+    (H) Raymer's Fig. 8.2 only limits the aft fuselage; the nose angles are
+    an assumption, steeper than aft because the pressure gradient is favourable.
     """
     return (height - radome_height) / (np.tan(np.radians(upper_angle))
                                        + np.tan(np.radians(lower_angle)))
