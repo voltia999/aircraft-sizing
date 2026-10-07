@@ -19,3 +19,15 @@ jobs:
       - run: pip install -r requirements.txt pytest
       - run: python -m pytest tests
       - run: python main.py
+      - run: python main.py a380
+      - run: python example/a320_guion_v4.py
+
+  notebook:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: jupyter nbconvert --to notebook --execute example/a320_guion_v4.ipynb --output /tmp/executed.ipynb
