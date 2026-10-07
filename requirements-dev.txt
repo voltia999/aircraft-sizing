@@ -2,5 +2,4 @@
 pytest>=8.0
 
 # Solo para la notebook de example/
-matplotlib>=3.8
 notebook>=7.0
