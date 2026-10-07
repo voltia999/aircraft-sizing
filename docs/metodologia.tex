@@ -183,6 +183,10 @@ fuera de ese rango. Entre \SIlist{0;30}{\degree} de flecha el libro propone
 interpolar entre las dos ecuaciones; no se hace porque en alas como la del guion
 ($\Lambda_\text{LE}\approx\SI{28}{\degree}$) daría $e\approx0{,}49$, fuera de ese
 mismo rango, y el guion usa la de ala recta~\cite{guion}.
+Cuando la correlación cae fuera del rango, el caso puede fijar $e$ a mano
+(\texttt{Aerodynamics.oswald}). Es lo que hace el ejemplo del A380: con
+$\Lambda_\text{LE} > \SI{30}{\degree}$ y $A = 7{,}53$ la ecuación~12.49 da
+$e \approx 0{,}57$, y el caso toma $e = 0{,}80$, el centro de la banda típica.
 La carga alar de máximo alcance para un reactor corresponde a
 $C_{L,\text{opt}} = \sqrt{C_{D0}/(3K)}$ \cite[ec.~5.14]{raymer6}:
 \begin{equation}

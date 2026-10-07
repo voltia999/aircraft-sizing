@@ -32,6 +32,7 @@ class  Aerodynamics():
     swet_sref:float = 6.0
     k_ld: float = 15.5
     ld_max: float = None           # fixed (L/D)max; None -> K_LD * sqrt(AR / Swet/Sref)
+    oswald: float = None           # fixed Oswald e; None -> Raymer eq. 12.48 / 12.49
     taper_ratio: float = 0.24
     sweep_c4: float = np.radians(25)
     c_cruise: float = 0.5 / HOUR   # 1/s (TSFC 0.5 1/h)

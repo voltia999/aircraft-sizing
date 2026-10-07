@@ -41,6 +41,7 @@ alar en **kg/m²**.
 | `swet_sref` | 6.0 | Relación superficie mojada / de referencia |
 | `k_ld` | 15.5 | Constante de (L/D)max = K_LD·√(AR / (Swet/Sref)) |
 | `ld_max` | `None` | (L/D)max fijado a mano; con `None` se calcula con `k_ld` |
+| `oswald` | `None` | Factor de Oswald fijado a mano; con `None` se usa Raymer 12.48 (Λ_BA ≤ 30°) o 12.49 (Λ_BA > 30°) |
 | `taper_ratio` | 0.24 | Estrechamiento λ |
 | `sweep_c4` | 25° | Flecha en c/4 (**en radianes**: `radians(25)`) |
 | `c_cruise`, `c_loiter` | 0.5 h⁻¹ | Consumo específico (en s⁻¹: `0.5 / HOUR`) |

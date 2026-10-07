@@ -1,8 +1,28 @@
 # cases — Tus casos de trabajo
 
 Carpeta para tus propios aviones. Su contenido **no se versiona** (solo este
-README), así que puedes probar lo que quieras sin afectar al repositorio. Si un
-caso debe compartirse con todos, va en [`example/`](../example/README.md).
+README y el ejemplo del A380), así que puedes probar lo que quieras sin afectar
+al repositorio. Si un caso debe compartirse con todos, va en
+[`example/`](../example/README.md).
+
+## Ejemplo: `a_380.py`
+
+Un caso fuera del guion, con dos cubiertas y cuatro motores:
+
+```bash
+python main.py a380
+```
+
+Sirve de modelo para un avión de dos cubiertas: cada `Deck` lleva su altura de
+cabina, su espesor de suelo y, en la superior, las escaleras.
+
+Fija el factor de Oswald con `Aerodynamics(oswald=0.80)`. Con su flecha
+(Λ_BA > 30°), la correlación 12.49 de Raymer da e = 0,57, por debajo de la
+banda típica de 0,70–0,85, y el MTOW sale en torno a 1 070 t frente a las
+560 t reales. Con e = 0,80 sale unas 613 t (+9 %).
+
+La envergadura no se recorta a los 80 m de la caja del aeropuerto, porque
+`Design.max_span` todavía no se aplica.
 
 ## Crear un caso
 

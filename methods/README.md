@@ -25,7 +25,7 @@ de `geometry`.
 | `ld_cruise` | 0.866 · (L/D)max (jet) |
 | `ld_cruise_refined` | 1 / (q·CD0/(W/S) + (W/S)·K/q), con q = ½ρV²; W/S en N/m² (el argumento `wing_loading`, o `cruise_wing_loading`, o `wing_loading` de diseño) |
 | `sweep_le` | atan(tan Λc/4 + (1−λ) / (AR(1+λ))) |
-| `oswald` | e₀ = 1 − 0.045·AR^0.68; si Λ_LE > 30°: 4.61·e₀·cos(Λ_LE)^0.15 − 3.1, si no: 1.78·e₀ − 0.64 (ecs. 12.48–12.49) |
+| `oswald` | `Aerodynamics.oswald` si está fijado; si no, e₀ = 1 − 0.045·AR^0.68 y, si Λ_LE > 30°: 4.61·e₀·cos(Λ_LE)^0.15 − 3.1, si no: 1.78·e₀ − 0.64 (ecs. 12.48–12.49) |
 | `oswald_in_typical_range` | e dentro de 0.70–0.85 (Raymer 12.6.1); el informe avisa si no |
 | `cd0` | Cfe · Swet/Sref |
 | `k` | 1 / (π·AR·e) |

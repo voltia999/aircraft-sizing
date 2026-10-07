@@ -34,7 +34,9 @@ python -m pytest tests              # regresión contra los guiones
 ```
 
 Para dimensionar tu propio avión, copia el ejemplo en `cases/` y cambia sus
-entradas: lo explica [`cases/README.md`](cases/README.md).
+entradas: lo explica [`cases/README.md`](cases/README.md). Allí está también
+`a_380.py` (`python main.py a380`), un caso de dos cubiertas y cuatro motores
+fuera del guion.
 
 ## Qué hay en cada carpeta
 
@@ -43,7 +45,7 @@ Cada carpeta tiene su propio README con el detalle.
 | Carpeta | Qué contiene | Léelo si… |
 |---|---|---|
 | [`example/`](example/README.md) | El caso del guion V4, con una notebook que sigue el PDF sección a sección | empiezas: es la mejor forma de ver el método completo |
-| [`cases/`](cases/README.md) | Tus casos de trabajo (no se versionan) | quieres dimensionar otro avión |
+| [`cases/`](cases/README.md) | Tus casos de trabajo (no se versionan) y el ejemplo del A380 | quieres dimensionar otro avión |
 | [`core/`](core/README.md) | Entradas (`Mission`, `Aerodynamics`, `Design`, `Reference`), `Result` y constantes | necesitas saber qué significa cada campo y sus unidades |
 | [`methods/`](methods/README.md) | Aerodinámica, pesos (iteración de W0) y restricciones | quieres ver o cambiar una ecuación de Raymer |
 | [`geometry/`](geometry/README.md) | Ala, fuselaje desde la cabina y empenaje | trabajas en la geometría |

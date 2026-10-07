@@ -12,7 +12,7 @@ importan los módulos igual que `main.py`.
 |---|---|
 | `test_guion_v4.py` | `docs/Dimensionamiento_preliminar_aeronave_Raymer_V4.pdf` (Raymer 7.ª ed.), ecuación a ecuación |
 | `test_guion_v2.py` | `Dimensionamiento_preliminar_aeronave_Raymer_V2.pdf` (Raymer 6.ª ed.) |
-| `test_controls_loiter.py` | Espera con la polar, superficies de mando (Fig. 6.3, Tabla 6.5) y rango de Oswald, calculados a mano |
+| `test_controls_loiter.py` | Espera con la polar, superficies de mando (Fig. 6.3, Tabla 6.5), rango de Oswald y Oswald fijado a mano, calculados a mano |
 | `test_raymer_options.py` | Contra el libro: Tabla 6.1 en unidades fps, factor de compuestos y reducciones de cola de la sección 6.4 |
 | `test_case_options.py` | Que las opciones que fija un caso (`Design.tail`, `Design.controls`, estándares de cabina de `Deck`, ángulos de morro y cola) llegan al resultado, y que una opción de fuselaje mal escrita da error |
 
@@ -32,7 +32,7 @@ propósito, actualiza ese valor.
 
 ## Fallos conocidos
 
-Estado actual: **66 correctos y 3 fallos esperados** (`xfail`), todos del V2.
+Estado actual: **67 correctos y 3 fallos esperados** (`xfail`), todos del V2.
 Están marcados con `@pytest.mark.xfail(strict=True, reason=...)`: pytest los
 cuenta como esperados y, si algún día pasan, lo avisa como error para que se
 quite la marca.

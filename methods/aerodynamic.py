@@ -27,6 +27,8 @@ def sweep_le(aero:Aerodynamics) -> float:
     return np.arctan(np.tan(aero.sweep_c4) + (1 - aero.taper_ratio) / (aero.AR * (1 + aero.taper_ratio)))
 
 def oswald(aero:Aerodynamics) -> float:
+    if aero.oswald is not None:
+        return aero.oswald
     e = 1 - 0.045 * aero.AR ** 0.68
     if np.rad2deg(sweep_le(aero)) > 30.0:
         return 4.61 * e * np.cos(sweep_le(aero)) ** 0.15 - 3.1

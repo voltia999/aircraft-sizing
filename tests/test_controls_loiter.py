@@ -4,6 +4,8 @@ Expected values are worked by hand from Raymer 6.3.8, 6.6 (Fig. 6.3, Table 6.5)
 and 12.6.1 for the guion's aircraft (A = 9.5, e = 0.77, CD0 = 0.0156).
 """
 
+from dataclasses import replace
+
 import numpy as np
 import pytest
 
@@ -60,3 +62,10 @@ def test_oswald_range(aero):
     assert aerodynamic.oswald_in_typical_range(aero)                 # e = 0.770
     swept = Aerodynamics(AR=7.53, taper_ratio=0.22, sweep_c4=np.radians(33.5))
     assert not aerodynamic.oswald_in_typical_range(swept)            # e = 0.567
+
+
+def test_oswald_fixed(aero):
+    """A fixed e replaces the correlation and reaches K."""
+    fixed = replace(aero, oswald=0.80)
+    assert aerodynamic.oswald(fixed) == 0.80
+    assert aerodynamic.k(fixed) == pytest.approx(1 / (np.pi * aero.AR * 0.80))

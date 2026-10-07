@@ -8,7 +8,7 @@ from core.constants import G
 from geometry.tail import implied_coefficients
 
 ROOT = Path(__file__).resolve().parent
-# example/ is versioned; cases/ holds local working cases and may not exist.
+# example/ is versioned; cases/ holds local working cases (only a_380.py is versioned).
 CASE_FOLDERS = ("example", "cases")
 
 def load_cases() -> dict:

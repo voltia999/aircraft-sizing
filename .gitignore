@@ -27,6 +27,7 @@ htmlcov/
 # Casos de aviones (de momento solo en local)
 cases/*
 !cases/README.md
+!cases/a_380.py
 
 # LaTeX (archivos auxiliares de compilación; el PDF sí se versiona)
 *.aux
