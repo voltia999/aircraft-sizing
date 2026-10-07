@@ -89,7 +89,6 @@ result.w0, result.w_empty, result.w_fuel
   referida a despegue dividiendo por las fracciones de despegue y subida.
 - `statistical_thrust_to_weight`: T/W = a·Mmax^C (Tabla 5.3, `TABLE_5_3`):
   6.ª ed. a = 0.267, C = 0.363; 7.ª ed. a = 0.297, C = 0.350.
-- `is_feasible`: comprueba W/S ≤ límite de aterrizaje (no se usa en el flujo principal).
 
 Los límites se muestran en el informe, pero no modifican el diseño: W/S y T/W
 son entradas de `Design`.

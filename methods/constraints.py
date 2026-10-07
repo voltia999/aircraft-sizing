@@ -28,6 +28,3 @@ TABLE_5_3 = {6: {"a": 0.267, "C": 0.363},
 def statistical_thrust_to_weight(design: Design) -> float:
     t = TABLE_5_3[design.raymer_edition]
     return t["a"] * design.max_mach ** t["C"]
-
-def is_feasible(wing_loading: float, mission: Mission, design: Design) -> bool:
-    return wing_loading <= landing_wing_loading(mission, design)

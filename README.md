@@ -123,7 +123,6 @@ longitud del fuselaje (que fija el brazo de cola).
   envergadura no se recorta al límite de la caja del aeropuerto.
 - La restricción de crucero y `statistical_thrust_to_weight` se informan, pero
   no modifican el diseño: W/S y T/W son entradas de `Design`.
-- `is_feasible` y `Design.table_6_1_metric` no se usan en el flujo principal.
 - Los imports son relativos a la raíz (`from core.data import …`), así que hay
   que ejecutar desde este directorio o añadirlo al `PYTHONPATH`
   (`example/a320_guion_v4.py` se encarga de ello y funciona desde cualquier sitio).
