@@ -60,14 +60,16 @@ def mid_cruise_wing_loading(mission: Mission, aero: Aerodynamics, design: Design
         f = f_new
     return ws_start * (1 + f_new) / 2
 
-def F_cruise(mission: Mission, aero: Aerodynamics, design: Design = None,
-             start_of_cruise: float = 1.0) -> float:
-    """Breguet; with a design, L/D from the polar at the mid-cruise W/S.
+def F_cruise(mission: Mission, aero: Aerodynamics, refined: bool = False,
+             design: Design = None, start_of_cruise: float = 1.0) -> float:
+    """Breguet; refined uses the polar L/D at the mid-cruise W/S (needs a design).
 
     start_of_cruise is W/W0 at the beginning of cruise (takeoff x climb).
     """
-    if design is None:
+    if not refined:
         return breguet_cruise(mission, aero, ld_cruise(aero))
+    if design is None:
+        raise ValueError("El crucero refinado necesita un Design")
     ws = mid_cruise_wing_loading(mission, aero, design, start_of_cruise)
     return breguet_cruise(mission, aero, ld_cruise_refined(aero, mission, design, ws))
 
@@ -86,8 +88,7 @@ def F_fuel(mission: Mission, aero: Aerodynamics, refined: bool = False,
     f_descent = mission.F_descent if mission.descent else 1.0
     w_x = (mission.F_takeoff
             * f_ascent
-            * F_cruise(mission, aero, design if refined else None,
-                       mission.F_takeoff * f_ascent)
+            * F_cruise(mission, aero, refined, design, mission.F_takeoff * f_ascent)
             * F_loiter(mission, aero, refined)
             * f_descent
             * mission.F_landing)

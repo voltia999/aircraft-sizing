@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from methods import aerodynamic, weight
-from core.data import Mission, Aerodynamics
+from core.data import Mission, Aerodynamics, Design
 from geometry import tail
 
 REL = 1e-3
@@ -62,6 +62,15 @@ def test_oswald_range(aero):
     assert aerodynamic.oswald_in_typical_range(aero)                 # e = 0.770
     swept = Aerodynamics(AR=7.53, taper_ratio=0.22, sweep_c4=np.radians(33.5))
     assert not aerodynamic.oswald_in_typical_range(swept)            # e = 0.567
+
+
+def test_cruise_method_is_explicit(mission, aero):
+    """A design alone does not switch to the refined cruise; refined needs one."""
+    design = Design(cruise_wing_loading=550.0)
+    assert weight.F_cruise(mission, aero, design=design) == weight.F_cruise(mission, aero)
+    assert weight.F_cruise(mission, aero, True, design) != weight.F_cruise(mission, aero)
+    with pytest.raises(ValueError):
+        weight.F_cruise(mission, aero, refined=True)
 
 
 def test_oswald_fixed(aero):

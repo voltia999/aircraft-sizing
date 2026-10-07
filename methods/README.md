@@ -36,8 +36,8 @@ de `geometry`.
 
 - **Peso fijo**: `w_fixed = n_pax·m_pax + n_trip·m_trip`.
 - **Crucero** (Breguet, ec. 6.11): `F_cruise = exp(−R·c / (V·(L/D)crucero))`.
-  Con `design` (cálculo refinado) usa `ld_cruise_refined` con la W/S real a
-  mitad de crucero; si no, `ld_cruise`.
+  Con `refined=True` usa `ld_cruise_refined` con la W/S real a mitad de
+  crucero, y necesita un `design` (sin él da error); si no, `ld_cruise`.
 - **W/S a mitad de crucero** (`mid_cruise_wing_loading`, nota a la ec. 6.13):
   `(W/S)_mid = (W0/S)·F_despegue·F_ascenso·(1 + F_crucero)/2`, iterada porque
   `F_crucero` depende de la L/D. Si `Design.cruise_wing_loading` está fijado,

@@ -178,8 +178,12 @@ def test_refined_climb_fraction(mission):
 
 
 def test_fuel_fraction_refined(mission, aero):
-    """Section 8.7: Wf/W0 = 0.261."""
-    assert weight.F_fuel(mission, aero, refined=True) == pytest.approx(0.261, rel=REL)
+    """Section 8.7: Wf/W0 = 0.261. The guion refines only the climb fraction and
+    keeps the first-order cruise and loiter."""
+    w_x = (mission.F_takeoff * weight.F_ascent_refined(mission)
+           * weight.F_cruise(mission, aero) * weight.F_loiter(mission, aero)
+           * mission.F_descent * mission.F_landing)
+    assert mission.F_reserve * (1 - w_x) == pytest.approx(0.261, rel=REL)
 
 
 @pytest.mark.parametrize("w0, expected", [(64_000, 0.526), (78_000, 0.521)])
