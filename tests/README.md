@@ -14,6 +14,7 @@ importan los módulos igual que `main.py`.
 | `test_guion_v2.py` | `Dimensionamiento_preliminar_aeronave_Raymer_V2.pdf` (Raymer 6.ª ed.) |
 | `test_controls_loiter.py` | Espera con la polar, superficies de mando (Fig. 6.3, Tabla 6.5), rango de Oswald y Oswald fijado a mano, calculados a mano |
 | `test_raymer_options.py` | Contra el libro: Tabla 6.1 en unidades fps, factor de compuestos y reducciones de cola de la sección 6.4 |
+| `test_physical_trends.py` | Tendencias físicas alrededor del avión del guion V4: el W0 crece con el alcance, la carga de pago, la espera y el consumo; la fracción en vacío de las Tablas 3.1 y 6.1 va en el sentido de sus exponentes; Oswald baja con el alargamiento y la flecha; la polar tiene su máximo en (L/D)max; y las leyes de escala exactas (Breguet exponencial, W/S ∝ V², S ∝ W0, S_cola ∝ 1/brazo) |
 | `test_case_options.py` | Que las opciones que fija un caso (`Design.tail`, `Design.controls`, estándares de cabina de `Deck`, ángulos de morro y cola) llegan al resultado, y que una opción de fuselaje mal escrita da error |
 
 Los tests de los guiones usan una tolerancia relativa del 1 %, porque los PDF
@@ -32,7 +33,7 @@ propósito, actualiza ese valor.
 
 ## Fallos conocidos
 
-Estado actual: **67 correctos y 3 fallos esperados** (`xfail`), todos del V2.
+Estado actual: **95 correctos y 3 fallos esperados** (`xfail`), todos del V2.
 Están marcados con `@pytest.mark.xfail(strict=True, reason=...)`: pytest los
 cuenta como esperados y, si algún día pasan, lo avisa como error para que se
 quite la marca.
